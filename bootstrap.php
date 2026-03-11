@@ -17,6 +17,7 @@ $manager->addConnection([
 	'database'  => $_ENV['DB_NAME'],
 	'username'  => $_ENV['DB_USER'],
 	'password'  => $_ENV['DB_PASS'],
+	'port'      => $_ENV['DB_PORT'],
 ]);
 
 $manager->setAsGlobal();
