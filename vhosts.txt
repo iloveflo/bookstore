@@ -1,0 +1,18 @@
+<VirtualHost *:80>
+DocumentRoot "D:/xampp/htdocs"
+ServerName localhost
+</VirtualHost>
+<VirtualHost *:80>
+DocumentRoot "D:/xampp/app/bookstore/public"
+ServerName bookstore.localhost
+# Set access permission
+<Directory "D:/xampp/app/bookstore/public">
+Options Indexes FollowSymLinks Includes ExecCGI
+AllowOverride All
+Require all granted
+RewriteEngine On
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule . index.php [L]
+</Directory>
+</VirtualHost>

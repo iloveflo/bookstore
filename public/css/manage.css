@@ -1,0 +1,11 @@
+#all-products tbody tr:hover{
+    background-color: var(--bs-table-striped-bg);
+}
+
+#all-users tbody tr:hover{
+    background-color: var(--bs-table-striped-bg);
+}
+
+#all-bills tbody tr:hover{
+    background-color: var(--bs-table-striped-bg);
+}

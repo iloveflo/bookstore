@@ -1,0 +1,57 @@
+version: '3.8'
+
+services:
+  # 1. PHP Application
+  app:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    container_name: bookstore_app
+    restart: unless-stopped
+    working_dir: /var/www/html
+    volumes:
+      - ./:/var/www/html
+    networks:
+      - bookstore-network
+
+  # 2. Nginx Web Server
+  webserver:
+    image: nginx:alpine
+    container_name: bookstore_nginx
+    restart: unless-stopped
+    ports:
+      - "8000:80" # Chạy web ở http://localhost:8000
+    volumes:
+      - ./:/var/www/html
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - app
+    networks:
+      - bookstore-network
+
+  # 3. MySQL Database
+  db:
+    image: mysql:8.0
+    container_name: bookstore_db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: bookstore_db
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_PASSWORD: userpassword
+      MYSQL_USER: user
+    volumes:
+      - dbdata:/var/lib/mysql
+      # Tự động import file sql khi khởi tạo lần đầu
+      - ./bookstore.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "3307:3306"
+    networks:
+      - bookstore-network
+
+# Định nghĩa mạng và nơi lưu dữ liệu DB
+networks:
+  bookstore-network:
+    driver: bridge
+
+volumes:
+  dbdata:
