@@ -24,3 +24,6 @@ jobs:
           file: ./docker/Dockerfile
           push: true
           tags: ${{ secrets.DOCKER_USERNAME }}/bookstore:tagname
+      
+      - name: Trigger Render Deploy
+        run: curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK }}
