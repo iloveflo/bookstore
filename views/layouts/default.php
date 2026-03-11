@@ -4,6 +4,12 @@
 <head>
     <meta charset="utf-8">
     <title><?=$this->e($title)?></title>
+    <script>
+        if (window.location.search.includes('zarsrc=') || window.location.search.includes('utm_')) {
+            var cleanUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
+            window.history.replaceState({}, document.title, cleanUrl);
+        }
+    </script>
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <base href="/bookstore/public/"> 
     <!-- Favicon -->
