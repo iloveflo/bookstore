@@ -29,18 +29,15 @@ COPY . .
 # 6. Cài đặt thư viện của project
 RUN composer install --no-dev --optimize-autoloader
 
-# 7. Phân quyền cho Laravel (Tránh lỗi Permission Denied khi ghi log/cache)
-RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
-
-# 8. Copy file cấu hình Nginx của bạn vào đúng chỗ
+# 7. Copy file cấu hình Nginx của bạn vào đúng chỗ
 COPY docker/nginx/default.conf /etc/nginx/sites-available/default
 
-# 9. Tạo script để chạy cả Nginx và PHP-FPM cùng lúc
+# 8. Tạo script để chạy cả Nginx và PHP-FPM cùng lúc
 RUN echo '#!/bin/sh\nphp-fpm -D\nnginx -g "daemon off;"' > /usr/local/bin/start.sh
 RUN chmod +x /usr/local/bin/start.sh
 
-# 10. Mở cổng 80 để Render có thể giao tiếp với Nginx
+# 9. Mở cổng 80 để Render có thể giao tiếp với Nginx
 EXPOSE 80
 
-# 11. Lệnh khởi chạy cuối cùng
+# 10. Lệnh khởi chạy cuối cùng
 CMD ["/usr/local/bin/start.sh"]
