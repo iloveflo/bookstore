@@ -67,7 +67,7 @@ bookstore/
 
 6. **Truy cập trình duyệt**
    ```
-   http://localhost/bookstore/public/
+   https://bookworm-b69w.onrender.com/
    ```
 
 ---
