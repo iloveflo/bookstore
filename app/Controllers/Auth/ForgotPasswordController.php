@@ -38,8 +38,7 @@ class ForgotPasswordController
         $user->save();
 
         // 3. Tạo link reset
-        // LƯU Ý: Sửa lại domain http://localhost/bookstore/public nếu cần thiết cho đúng với môi trường của bạn
-        $domain = "http://localhost:8000/bookstore/public"; // Hoặc http://localhost:8000
+        $domain = "https://bookworm-b69w.onrender.com/bookstore/public";
         $link = "$domain/reset-password?token=" . $token . "&email=" . $email;
 
         // 4. Gửi Mail bằng PHPMailer
