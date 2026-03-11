@@ -84,6 +84,10 @@ $router->post('/updateUser', '\App\Controllers\Manage\ManagementController@updat
 $router->get('/passChange', '\App\Controllers\Manage\ManagementController@passChange');
 $router->post('/updatePass', '\App\Controllers\Manage\ManagementController@updatePass');
 
-$router->setBasePath('/bookstore/public');
+if ($_SERVER['SERVER_NAME'] === 'localhost') {
+    $router->setBasePath('/bookstore/public');
+} else {
+    $router->setBasePath('');
+}
 $router->run();
 
