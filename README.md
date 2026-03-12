@@ -1,6 +1,7 @@
 <div align="center">
   <h1>📚 BookWorm</h1>
   <p>Một ứng dụng quản lý cửa hàng sách chuyên nghiệp và mạnh mẽ, được xây dựng trên nền tảng PHP theo kiến trúc MVC tự định nghĩa (Custom MVC Architecture). Dự án kết hợp khéo léo giữa các thư viện phổ biến như Eloquent ORM, Bramus Router, Plates Templating cùng với môi trường Container hóa Docker để mang lại trải nghiệm phát triển và triển khai dễ dàng nhất.</p>
+  <strong>🌍 Live Demo: <a href="https://bookworm-b69w.onrender.com" target="_blank">https://bookworm-b69w.onrender.com</a></strong><br>
   <strong>⚠️ Lưu ý: Dự án chỉ mang tính chất học tập, không phải sản phẩm thương mại.</strong>
 </div>
 
@@ -67,6 +68,12 @@ Dự án cung cấp một loạt các tính năng cơ bản nhưng thiết yếu
 - **Docker** & **Docker Compose**
 - **Nginx** (Alpine version)
 - **MySQL** (Tag: 8.0)
+
+### 🚀 CI/CD Pipeline & Cloud Deployment
+- **GitHub Actions:** Tự động hóa luồng CI/CD mỗi khi có thay đổi trên nhánh `main`.
+- **Docker Hub:** Lưu trữ và quản lý Docker Images (Container Registry).
+- **Render:** Triển khai (hosting services) ứng dụng Web App tự động dựa trên Docker Image.
+- **Aiven:** Cloud Database hosting được sử dụng để chạy MySQL trên môi trường production.
 
 ---
 
