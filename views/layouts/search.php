@@ -4,7 +4,11 @@
 
 <main class="container px-5">
     <?php
-    echo '<h4 class="ps-5 my-5">Kết quả tìm kiếm từ khóa "' . $_POST['search'] . '": </h4>';
+    // Bổ sung kiểm tra tồn tại và đổi $_POST thành $_GET
+    $keyword = isset($_GET['search']) ? $_GET['search'] : '';
+    
+    // Dùng htmlspecialchars để an toàn hơn khi in dữ liệu người dùng nhập ra màn hình
+    echo '<h4 class="ps-5 my-5">Kết quả tìm kiếm từ khóa "' . htmlspecialchars($keyword) . '": </h4>';
     echo '<div class="row mx-5">';
     foreach ($result as $rs) {
         echo '<div class="col-sm-6 col-md-6 col-lg-3 mb-3">';
@@ -19,9 +23,10 @@
                                 <div class="col ps-2">
                                 <h5 class="fw-bold text-danger">' . number_format($rs->gia_sach * (100 - $rs->khuyen_mai) / 100, 0, '.', ',') . 'đ</h5></div>';
         if ($rs->khuyen_mai > 0) echo '<div class="col p-0"><span class="text-primary"><del>' . number_format($rs->gia_sach, 0, '.', ',') . 'đ</del></span></div>';
+        // Form AddCart VẪN GIỮ LÀ POST (vì nó thêm dữ liệu vào giỏ hàng)
         echo '</div><form class="row"  action="addCart" method="POST"><input type="hidden" value="1"  name="so-luong">
                         <input type="hidden" name="masp" value="' . $rs->ma_sach . '">
-                        <p class="col-8"> Đã bán: ' . $rs->sold . '</p>
+                        <p class="col-8"> Đã bán: ' . $rs->sold . '</p>
                         <button class="col-4 btn btn-link pe-0"><i class="fas fa-cart-plus" style="color:#ec4276; font-size:24px;"></i></button></form></div></div></div>';
     }
     ?>

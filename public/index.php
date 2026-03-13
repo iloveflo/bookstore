@@ -40,10 +40,10 @@ $router->get('/auth/facebook/callback', '\App\Controllers\Auth\LoginController@c
 $router->get('/', '\App\Controllers\HomeController@index');
 $router->get('/home', '\App\Controllers\HomeController@index');
 $router->get('/about', '\App\Controllers\HomeController@about');
-$router->post('/search', '\App\Controllers\HomeController@search');
+$router->get('/search', '\App\Controllers\HomeController@search');
 
 $router->get('/product_all', '\App\Controllers\ProductController@product');
-$router->post('/product', '\App\Controllers\ProductController@productOfType');
+$router->get('/product', '\App\Controllers\ProductController@productOfType');
 $router->get('/detail', '\App\Controllers\ProductController@detailProduct');
 
 $router->get('/cart', '\App\Controllers\CartController@cart');

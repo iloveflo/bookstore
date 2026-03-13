@@ -7,7 +7,7 @@
 
 <!-- <div class="container-fluid p-0"> -->
 
-<form action="product" method="POST">
+<form action="product" method="GET">
     <div class="container mx-auto pt-5 row">
         <div class="col text-center">
             <button name="sale" class="btn btn-link p-0 m-0"><img src="/img/khuyenmai.png" width="60px" alt=""></button>

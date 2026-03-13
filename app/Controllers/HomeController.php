@@ -29,8 +29,8 @@ class HomeController extends Controller
 
 	public function search()
 	{
-		if(isset($_POST['search']) && $_POST['search'] != ''){
-			$this->sendPage('layouts/search',['result'=>Product::where('ten_sach', 'like', '%' . $_POST['search']. '%')->get()]);
+		if(isset($_GET['search']) && $_GET['search'] != ''){
+			$this->sendPage('layouts/search',['result'=>Product::where('ten_sach', 'like', '%' . $_GET['search']. '%')->get()]);
 		}else {
 			redirect('home');
 		}

@@ -16,7 +16,7 @@
             </div>
             <div class="col-md-6 text-center text-lg-right">
                 <div class="d-inline-flex align-items-center">
-                    <form method="POST" accept-charset="UTF-8" class="search-box" action="search" name="search-form">
+                    <form method="GET" accept-charset="UTF-8" class="search-box" action="search" name="search-form">
                         <button class="btn-search" type="submit" value="Search"><i class="fas fa-search"></i></button>
                         <input type="search" class="input-search" placeholder=" Tìm kiếm... " name="search" value="">
                     </form>

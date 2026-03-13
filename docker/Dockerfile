@@ -10,7 +10,7 @@ RUN apt-get update && apt-get install -y \
     zip \
     unzip \
     libcurl4-openssl-dev \
-    nginx \
+    nginx supervisor \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # 2. Cài đặt các PHP extensions
@@ -32,12 +32,12 @@ RUN composer install --no-dev --optimize-autoloader
 # 7. Copy file cấu hình Nginx của bạn vào đúng chỗ
 COPY docker/nginx/default.conf /etc/nginx/sites-available/default
 
-# 8. Tạo script để chạy cả Nginx và PHP-FPM cùng lúc
-RUN echo '#!/bin/sh\nphp-fpm -D\nnginx -g "daemon off;"' > /usr/local/bin/start.sh
-RUN chmod +x /usr/local/bin/start.sh
+# 8. Cấu hình Supervisor thay cho start.sh
+# Tạo cấu hình báo cho Supervisor chạy cả PHP và Nginx
+RUN echo '[supervisord]\nnodaemon=true\n\n[program:php-fpm]\ncommand=php-fpm\nautostart=true\nautorestart=true\n\n[program:nginx]\ncommand=nginx -g "daemon off;"\nautostart=true\nautorestart=true' > /etc/supervisor/conf.d/supervisord.conf
 
-# 9. Mở cổng 80 để Render có thể giao tiếp với Nginx
+# 9. Mở cổng 80
 EXPOSE 80
 
-# 10. Lệnh khởi chạy cuối cùng
-CMD ["/usr/local/bin/start.sh"]
+# 10. Lệnh khởi chạy cuối cùng dùng Supervisor
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
