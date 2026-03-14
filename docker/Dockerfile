@@ -32,9 +32,15 @@ RUN composer install --no-dev --optimize-autoloader
 # 7. Copy file cấu hình Nginx của bạn vào đúng chỗ
 COPY docker/nginx/default.conf /etc/nginx/sites-available/default
 
+# --- PHẦN THÊM MỚI ĐỂ BẮT LOG ---
+# Trỏ file log vật lý của Nginx thẳng ra màn hình console (stdout/stderr)
+RUN ln -sf /dev/stdout /var/log/nginx/access.log && \
+    ln -sf /dev/stderr /var/log/nginx/error.log
+# --------------------------------
+
 # 8. Cấu hình Supervisor thay cho start.sh
-# Tạo cấu hình báo cho Supervisor chạy cả PHP và Nginx
-RUN echo '[supervisord]\nnodaemon=true\n\n[program:php-fpm]\ncommand=php-fpm\nautostart=true\nautorestart=true\n\n[program:nginx]\ncommand=nginx -g "daemon off;"\nautostart=true\nautorestart=true' > /etc/supervisor/conf.d/supervisord.conf
+# Đã bổ sung các cờ stdout_logfile và stderr_logfile để ép Supervisor nhả log ra ngoài
+RUN echo '[supervisord]\n\nodaemon=true\n\user=root\n\logfile=/dev/null\n\logfile_maxbytes=0\n\[program:php-fpm]\n\command=php-fpm\n\autostart=true\n\autorestart=true\n\stdout_logfile=/dev/stdout\n\stdout_logfile_maxbytes=0\n\stderr_logfile=/dev/stderr\n\stderr_logfile_maxbytes=0\n\[program:nginx]\n\command=nginx -g "daemon off;"\n\autostart=true\n\autorestart=true\n\stdout_logfile=/dev/stdout\n\stdout_logfile_maxbytes=0\n\stderr_logfile=/dev/stderr\n\stderr_logfile_maxbytes=0' > /etc/supervisor/conf.d/supervisord.conf
 
 # 9. Mở cổng 80
 EXPOSE 80
