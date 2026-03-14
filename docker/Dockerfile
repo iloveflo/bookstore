@@ -40,7 +40,29 @@ RUN ln -sf /dev/stdout /var/log/nginx/access.log && \
 
 # 8. Cấu hình Supervisor thay cho start.sh
 # Đã bổ sung các cờ stdout_logfile và stderr_logfile để ép Supervisor nhả log ra ngoài
-RUN echo '[supervisord]\n\nodaemon=true\n\user=root\n\logfile=/dev/null\n\logfile_maxbytes=0\n\[program:php-fpm]\n\command=php-fpm\n\autostart=true\n\autorestart=true\n\stdout_logfile=/dev/stdout\n\stdout_logfile_maxbytes=0\n\stderr_logfile=/dev/stderr\n\stderr_logfile_maxbytes=0\n\[program:nginx]\n\command=nginx -g "daemon off;"\n\autostart=true\n\autorestart=true\n\stdout_logfile=/dev/stdout\n\stdout_logfile_maxbytes=0\n\stderr_logfile=/dev/stderr\n\stderr_logfile_maxbytes=0' > /etc/supervisor/conf.d/supervisord.conf
+RUN echo '[supervisord]\n\
+nodaemon=true\n\
+user=root\n\
+logfile=/dev/null\n\
+logfile_maxbytes=0\n\
+\n\
+[program:php-fpm]\n\
+command=php-fpm\n\
+autostart=true\n\
+autorestart=true\n\
+stdout_logfile=/dev/stdout\n\
+stdout_logfile_maxbytes=0\n\
+stderr_logfile=/dev/stderr\n\
+stderr_logfile_maxbytes=0\n\
+\n\
+[program:nginx]\n\
+command=nginx -g "daemon off;"\n\
+autostart=true\n\
+autorestart=true\n\
+stdout_logfile=/dev/stdout\n\
+stdout_logfile_maxbytes=0\n\
+stderr_logfile=/dev/stderr\n\
+stderr_logfile_maxbytes=0' > /etc/supervisor/conf.d/supervisord.conf
 
 # 9. Mở cổng 80
 EXPOSE 80
