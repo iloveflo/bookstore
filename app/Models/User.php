@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class User extends Model
 {
@@ -70,5 +71,10 @@ class User extends Model
         }
         
         return $errors;
+    }
+    // Thêm hàm này vào bên trong class User
+    public function articles(): HasMany
+    {
+        return $this->hasMany(Article::class, 'admin_id', 'id');
     }   
 }

@@ -26,6 +26,9 @@ WORKDIR /var/www/html
 # (Render cần source code nằm sẵn trong image, không dùng volumes như local)
 COPY . .
 
+# 5.5. Tạo thư mục và cấp quyền ghi cho ảnh upload (product và blog)
+RUN chown -R www-data:www-data /var/www/html/public/img/product /var/www/html/public/img/blog
+
 # 6. Cài đặt thư viện của project
 RUN composer install --no-dev --optimize-autoloader
 

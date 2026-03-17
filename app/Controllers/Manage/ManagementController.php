@@ -12,6 +12,7 @@ use App\Models\NhaXuatBan;
 use App\Models\Bill;
 use App\Models\BillDetail;
 use App\Models\Cart;
+use App\Models\Article;
 use Carbon\Carbon;
 
 class ManagementController extends Controller
@@ -135,7 +136,7 @@ class ManagementController extends Controller
 
         // 6. Ngày tạo
         // Lưu ý: Đảm bảo bạn đã use Carbon\Carbon; ở đầu file
-        $data['created_at'] = \Carbon\Carbon::now()->tz('Asia/Ho_Chi_Minh');
+        $data['created_at'] = Carbon::now()->tz('Asia/Ho_Chi_Minh');
 
         // 7. Lưu vào DB nếu không có lỗi
         if (empty($model_errors)) {
@@ -534,5 +535,237 @@ class ManagementController extends Controller
                 ]);
             }
         }
+    }
+
+   public function indexArticles()
+    {
+        // 1. Xác định trang hiện tại từ URL (ví dụ: ?page=2). Mặc định là trang 1.
+        $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+        $page = $page > 0 ? $page : 1; 
+        
+        $perPage = 10; // Số bài viết mỗi trang
+        $offset = ($page - 1) * $perPage;
+
+        // 2. Khởi tạo câu truy vấn cơ bản (Chưa lấy dữ liệu vội)
+        $query = Article::with('admin');
+
+        // 3. XỬ LÝ LỌC: Nếu có tham số 'status' gửi lên từ form thì thêm điều kiện
+        if (!empty($_GET['status'])) {
+            $query->where('status', $_GET['status']);
+        }
+
+        // 4. Đếm tổng số bài viết (dựa trên query đã lọc) để tính tổng trang
+        $totalArticles = $query->count();
+        $totalPages = ceil($totalArticles / $perPage);
+
+        // 5. Lấy dữ liệu chính thức với skip, take và sắp xếp
+        $articles = $query->latest('created_at')
+            ->skip($offset)
+            ->take($perPage)
+            ->get(); 
+
+        // 6. Trả về view cùng với các biến cần thiết
+        $this->sendPage('manage/manageArticles', [
+            'articles'      => $articles,
+            'currentPage'   => $page,
+            'totalPages'    => $totalPages,
+            'currentStatus' => $_GET['status'] ?? '' // Truyền biến này ra để giữ trạng thái đã chọn ở file HTML
+        ]);
+    }
+
+    /**
+     * Xử lý cập nhật bài viết vào CSDL
+     * @param int $id Mã bài viết cần sửa (lấy từ URL)
+     */
+    public function updateArticle($id)
+    {
+        // 1. Lấy dữ liệu từ form gửi lên
+        $title = $_POST['title'] ?? '';
+        $summary = $_POST['summary'] ?? '';
+        $content = $_POST['content'] ?? '';
+        $status = $_POST['status'] ?? 'draft';
+        $thumbnail_cu = $_POST['thumbnail_cu'] ?? '';
+
+        // Validate cơ bản (bạn có thể tuỳ chỉnh lại logic báo lỗi giống project của bạn)
+        if (empty($title) || empty($content)) {
+            // Lưu lỗi vào session và quay lại trang sửa
+            // $_SESSION['errors'] = ['title' => 'Tiêu đề không được để trống!'];
+            header("Location: /bookstore/public/article/edit/" . $id);
+            exit;
+        }
+
+        // 2. Xử lý Upload Ảnh Bìa (Thumbnail)
+        $thumbnail = $thumbnail_cu; // Mặc định là giữ lại tên ảnh cũ
+
+        // Kiểm tra xem người dùng có chọn file ảnh mới không (mã lỗi 0 = UPLOAD_ERR_OK)
+        if (isset($_FILES['thumbnail']) && $_FILES['thumbnail']['error'] === 0) {
+            
+            // Định nghĩa đường dẫn lưu file (Bạn nhớ điều chỉnh lại số lượng '../' cho đúng với vị trí thư mục public của bạn)
+            $uploadDir = __DIR__ . '/../../../public/img/blog/'; 
+            
+            // Tạo thư mục nếu chưa tồn tại
+            if (!is_dir($uploadDir)) {
+                mkdir($uploadDir, 0777, true);
+            }
+
+            // Đổi tên file để tránh bị trùng lặp khi nhiều người up trùng tên file
+            $fileName = time() . '_' . basename($_FILES['thumbnail']['name']);
+            $targetFilePath = $uploadDir . $fileName;
+
+            // Di chuyển file từ thư mục tạm vào thư mục chính thức
+            if (move_uploaded_file($_FILES['thumbnail']['tmp_name'], $targetFilePath)) {
+                $thumbnail = $fileName; // Đổi biến $thumbnail thành tên file mới để lưu vào CSDL
+                
+                // (Tùy chọn) Xóa ảnh cũ đi cho nhẹ dung lượng Server
+                if (!empty($thumbnail_cu) && file_exists($uploadDir . $thumbnail_cu)) {
+                    unlink($uploadDir . $thumbnail_cu);
+                }
+            }
+        }
+
+        // 3. Thực hiện Cập nhật vào Cơ sở dữ liệu bằng Model Article
+        Article::where('article_id', $id)->update([
+            'title'     => $title,
+            'summary'   => $summary,
+            'content'   => $content,
+            'thumbnail' => $thumbnail,
+            'status'    => $status,
+        ]);
+
+        // 4. Chuyển hướng người dùng về lại trang Danh sách bài viết sau khi thành công
+        header('Location: /bookstore/public/manageArticles');
+        exit;
+    }
+
+    /**
+     * Hiển thị giao diện sửa bài viết
+     * @param int $id Mã bài viết truyền từ URL
+     */
+    public function editArticle($id)
+    {
+        // 1. Truy vấn lấy thông tin bài viết theo Khóa chính (article_id)
+        $article = Article::where('article_id', $id)->first();
+
+        // 2. Bảo mật cơ bản: Nếu user cố tình nhập ID tào lao trên URL và không tìm thấy bài viết
+        if (!$article) {
+            // Chuyển hướng ngay về trang danh sách bài viết
+            header('Location: /bookstore/public/manageArticles');
+            exit;
+        }
+
+        // 3. Trả về view 'edit_article' kèm theo dữ liệu
+        // Lưu ý: Đổi chữ 'manage/edit_article' thành đúng tên file giao diện bạn đã lưu nhé
+        $this->sendPage('manage/edit_article', [
+            'article'   => $article,                               // Dữ liệu bài viết hiện tại
+            'errors'    => session_get_once('errors_article'),     // Lỗi xác thực (nếu có lúc update)
+            'old_value' => $this->getSavedUpdateFormValues(),      // Giá trị cũ đang nhập dở (nếu có lỗi)
+        ]);
+    }
+
+    /**
+     * Xử lý xóa bài viết và file ảnh kèm theo
+     * @param int $id Mã bài viết cần xóa (lấy từ URL)
+     */
+    public function deleteArticle($id)
+    {
+        // 1. Tìm bài viết dựa vào ID
+        $article = Article::where('article_id', $id)->first();
+
+        // Nếu bài viết tồn tại thì mới tiến hành xóa
+        if ($article) {
+            
+            // 2. Xóa file ảnh bìa vật lý trên server (nếu có ảnh)
+            if (!empty($article->thumbnail)) {
+                $imagePath = '/var/www/html/public/img/blog/' . $article->thumbnail;
+                
+                // Kiểm tra xem file có thực sự tồn tại trên ổ cứng không rồi mới xóa
+                if (file_exists($imagePath)) {
+                    unlink($imagePath);
+                }
+            }
+
+            // 3. Xóa dữ liệu bài viết trong Cơ sở dữ liệu
+            $article->delete();
+        }
+
+        // 4. Chuyển hướng người dùng về lại trang Danh sách bài viết
+        header('Location: /bookstore/public/manageArticles');
+        exit;
+    }
+
+    /**
+     * Hiển thị giao diện Thêm bài viết mới
+     */
+    public function createArticle()
+    {
+        // Trả về view 'add_article' (Bạn nhớ tạo file giao diện này nhé)
+        $this->sendPage('manage/add_article', [
+            'errors'    => session_get_once('errors_article'),
+            'old_value' => $this->getSavedUpdateFormValues(),
+        ]);
+    }
+
+    /**
+     * Xử lý lưu bài viết mới vào CSDL
+     */
+    public function storeArticle()
+    {
+        // 1. Lấy dữ liệu từ form gửi lên
+        $title = $_POST['title'] ?? '';
+        $summary = $_POST['summary'] ?? '';
+        $content = $_POST['content'] ?? '';
+        $status = $_POST['status'] ?? 'published';
+        
+        // Lấy ID của Admin đang đăng nhập. 
+        // Nếu bạn có dùng Session thì thay bằng $_SESSION['user_id'], tạm thời tôi để mặc định là 2 (tài khoản Admin của bạn).
+        $admin_id = 2; 
+
+        // Validate cơ bản
+        if (empty($title) || empty($content)) {
+            // Quay lại trang thêm nếu có lỗi
+            header("Location: /bookstore/public/manageArticles/createArticle");
+            exit;
+        }
+
+        // 2. Xử lý Upload Ảnh Bìa (Thumbnail)
+        $thumbnail = ''; 
+
+        if (isset($_FILES['thumbnail']) && $_FILES['thumbnail']['error'] === 0) {
+            
+            $uploadDir = '/var/www/html/public/img/blog/'; 
+            
+            if (!is_dir($uploadDir)) {
+                mkdir($uploadDir, 0777, true);
+            }
+
+            // Giữ nguyên tên file ảnh gốc
+            $fileName = basename($_FILES['thumbnail']['name']);
+            $targetFilePath = $uploadDir . $fileName;
+
+            // Kiểm tra: Nếu file đã tồn tại thì không upload nữa, chỉ lấy tên lưu vào DB
+            if (file_exists($targetFilePath)) {
+                $thumbnail = $fileName;
+            } else {
+                // Nếu chưa có thì upload file mới vào
+                if (move_uploaded_file($_FILES['thumbnail']['tmp_name'], $targetFilePath)) {
+                    $thumbnail = $fileName;
+                }
+            }
+        }
+
+        // 3. Thực hiện Thêm Mới vào Cơ sở dữ liệu
+        // Lưu ý: Dùng create() thay vì update() cho việc thêm mới
+        Article::create([
+            'admin_id'  => $admin_id,
+            'title'     => $title,
+            'summary'   => $summary,
+            'content'   => $content,
+            'thumbnail' => $thumbnail,
+            'status'    => $status,
+        ]);
+
+        // 4. Chuyển hướng về trang Danh sách
+        header('Location: /bookstore/public/manageArticles');
+        exit;
     }
 }

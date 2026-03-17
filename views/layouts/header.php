@@ -52,6 +52,7 @@
                     <a href="home" class="nav-item nav-link <?= ($activePage == 'home') ? 'active' : ''; ?>">Trang chủ</a>
                     <a href="about" class="nav-item nav-link <?= ($activePage == 'about') ? 'active' : ''; ?>">Giới thiệu</a>
                     <a href="product_all" class="nav-item nav-link <?= ($activePage == 'product_all') ? 'active' : ''; ?>">Sản phẩm</a>
+                    <a href="blog" class="nav-item nav-link <?= ($activePage == 'blog') ? 'active' : ''; ?>">Blog</a>
                 </div>
                 <a href="home" class="navbar-brand mx-5 d-none d-lg-block">
                     <h2 class="m-0 display-4 text-secondary"><span class="text-primary">BOOK</span>worm</h2>
@@ -72,8 +73,14 @@
                                     <li class="ps-4 mb-2 text-start">
                                         <a href="users">Người Dùng</a>
                                     </li>
-                                    <li class="ps-4 text-start">
+                                    <li class="ps-4 mb-2 text-start">
                                         <a href="manageBill">Đơn Hàng</a>
+                                    </li>
+                                    <li class="ps-4 mb-2 text-start">
+                                        <a href="manageArticles">Bài Viết</a>
+                                    </li>
+                                    <li class="ps-4 mb-2 text-start">
+                                        <a href="dashboard">Dashboard</a>
                                     </li>
                                 </ul>
                             </div>

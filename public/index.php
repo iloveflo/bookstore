@@ -59,6 +59,10 @@ $router->post('/cancelBill/([0-9]+)', '\App\Controllers\BillController@cancel');
 $router->post('/recieved/([0-9]+)', '\App\Controllers\BillController@recieved');
 $router->post('/received/([A-Za-z0-9]+)', '\App\Controllers\BillController@received');
 
+//Blog
+$router->get('/blog', '\App\Controllers\ArticleController@index');
+$router->get('/blog/detail/([0-9]+)', '\App\Controllers\ArticleController@show');
+
 // Management Products routes
 $router->get('/manageProduct', '\App\Controllers\Manage\ManagementController@getAllProducts');
 $router->post('/manageProduct', '\App\Controllers\Manage\ManagementController@sortAllProducts');
@@ -76,6 +80,18 @@ $router->get('/manageDetailBill', '\App\Controllers\Manage\ManagementController@
 $router->post('/manage/deleteBill/([0-9]+)', '\App\Controllers\Manage\ManagementController@cancelBill');
 $router->post('/manage/sending/([0-9]+)', '\App\Controllers\Manage\ManagementController@send');
 $router->post('/manageBill', '\App\Controllers\Manage\ManagementController@sortBill');
+
+// Management Articles routes
+$router->get('/manageArticles', '\App\Controllers\Manage\ManagementController@indexArticles');
+$router->get('/manageArticles/createArticle', '\App\Controllers\Manage\ManagementController@createArticle');
+$router->post('/manageArticles/storeArticle', '\App\Controllers\Manage\ManagementController@storeArticle');
+$router->get('/manageArticles/editArticle/([0-9]+)', '\App\Controllers\Manage\ManagementController@editArticle');
+$router->post('/manageArticles/updateArticle/([0-9]+)', '\App\Controllers\Manage\ManagementController@updateArticle');
+$router->post('/manageArticles/deleteArticle/([0-9]+)', '\App\Controllers\Manage\ManagementController@deleteArticle');
+
+// Router hiển thị Dashboard
+$router->get('/dashboard', '\App\Controllers\DashboardController@index');
+
 // Management Users routes
 $router->get('/users', '\App\Controllers\Manage\ManagementController@getAllUsers');
 $router->post('/users', '\App\Controllers\Manage\ManagementController@sortAllUsers');

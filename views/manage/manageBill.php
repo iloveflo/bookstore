@@ -70,6 +70,18 @@
                                 Người Dùng
                             </a>
                         </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="manageArticles">
+                                <i class="fas fa-newspaper"></i>
+                                Bài Viết
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="dashboard">
+                                <i class="fas fa-chart-line"></i>
+                                Dashboard
+                            </a>
+                        </li>
                     </ul>
                 </div>
             </nav>
