@@ -4,6 +4,13 @@ on:
   push:
     branches: [ "main" ]
 
+    paths-ignore:
+      - 'README.md'
+      - '**/*.md'     
+      - '**/*.txt'
+      - '**/*.gitignore'
+      - '.github/workflows/docker-image.yml'     
+
 jobs:
   build-push:
     runs-on: ubuntu-latest

@@ -21,7 +21,7 @@
 
 ## 🚀 Các tính năng nổi bật (Key Features)
 
-Dự án cung cấp một loạt các tính năng cơ bản nhưng thiết yếu cho một hệ thống quản lý, thương mại điện tử quy mô nhỏ:
+Dự án cung cấp một loạt các tính năng từ cơ bản tới nâng cao, thiết yếu cho một hệ thống quản lý & thương mại điện tử quy mô nhỏ:
 
 1. **🛍️ Quản lý sản phẩm (Sách) & Phân loại (Danh mục)**
    - Hiển thị danh sách các đầu sách với giao diện trực quan.
@@ -29,19 +29,53 @@ Dự án cung cấp một loạt các tính năng cơ bản nhưng thiết yếu
    - Chức năng tìm kiếm, lọc và phân trang (Pagination).
    - Xem chi tiết thông tin sách (Tác giả, Nhà xuất bản, Giá, Mô tả).
 
-2. **🔐 Hệ thống Xác thực & Phân quyền nâng cao (Authentication & Authorization)**
+2. **🛒 Giỏ hàng & Thanh toán (Shopping Cart & Checkout)**
+   - Thêm sách vào giỏ hàng với số lượng tùy chọn (yêu cầu đăng nhập).
+   - Cập nhật số lượng, xóa sản phẩm khỏi giỏ hàng.
+   - Kiểm tra tồn kho tự động khi thêm/cộng dồn sản phẩm.
+   - Đặt hàng (Checkout) với thông tin: số điện thoại, địa chỉ giao hàng.
+   - Tự động cập nhật số lượng tồn kho và lượt bán (`sold`) sau khi đặt hàng thành công.
+
+3. **📦 Quản lý Đơn hàng / Hóa đơn (Order & Bill Management)**
+   - Xem lịch sử mua hàng (Payment History) với danh sách đơn hàng sắp xếp theo ngày.
+   - Xem chi tiết từng hóa đơn (sản phẩm, số lượng, tổng tiền).
+   - Người mua có thể **Hủy đơn** (Cancel) hoặc **Xác nhận đã nhận hàng** (Received).
+   - Theo dõi trạng thái đơn hàng: Processing → Sending → Received / Canceled.
+
+4. **📝 Hệ thống Blog / Bài viết (Blog & Articles)**
+   - Trang Blog hiển thị danh sách bài viết đã xuất bản (`published`) với phân trang.
+   - Tìm kiếm bài viết theo tiêu đề.
+   - Xem chi tiết bài viết kèm thông tin tác giả (Admin).
+   - Gợi ý "Bài viết liên quan" (3 bài mới nhất) ở cuối mỗi bài viết.
+
+5. **🔐 Hệ thống Xác thực & Phân quyền nâng cao (Authentication & Authorization)**
    - Đăng nhập (Login) và Đăng ký (Register) người dùng thông thường.
    - **Tích hợp OAuth2**: Hỗ trợ đăng nhập nhanh bằng nền tảng thứ 3 như **Google** và **Facebook** (được thiết lập sẵn cấu hình qua file `.env`).
    - Quản lý phiên đăng nhập an toàn thông qua lớp `SessionGuard`.
    - Tính năng "Quên mật khẩu" (Forgot Password): Sinh token reset mật khẩu an toàn và gửi liên kết khôi phục tới người dùng bằng Email thật thông qua `PHPMailer` (hỗ trợ SMTP).
+   - Quản lý thông tin cá nhân: Cập nhật hồ sơ người dùng, đổi mật khẩu.
 
-3. **🏗️ Kiến trúc & Mã nguồn chất lượng cao**
+6. **📊 Trang Dashboard phân tích dữ liệu (Admin Analytics Dashboard)**
+   - Bảng tổng quan hiển thị: Tổng doanh thu, Tổng đơn hàng, Tổng sản phẩm, Tổng người dùng.
+   - **Biểu đồ doanh thu** theo thời gian với bộ lọc linh hoạt: Hôm nay / Tháng / Quý / Năm.
+   - **Top 5 sản phẩm bán chạy** nhất (biểu đồ).
+   - **Doanh số theo loại sách** (thống kê theo danh mục).
+   - **Trạng thái đơn hàng**: Phân bổ đơn hàng theo trạng thái (Hoàn thành, Đang giao, Chờ duyệt, Đã hủy).
+   - **Phương thức thanh toán**: Thống kê COD vs. Chuyển khoản.
+
+7. **🛠️ Trang Quản trị Admin (Admin Management Panel)**
+   - **Quản lý Sản phẩm**: Thêm mới, Chỉnh sửa, Xóa sách. Sắp xếp và lọc danh sách.
+   - **Quản lý Đơn hàng**: Xem tất cả đơn hàng, chi tiết hóa đơn, Hủy đơn, Xác nhận giao hàng (Sending).
+   - **Quản lý Bài viết**: CRUD đầy đủ (Thêm, Sửa, Xóa bài viết Blog) với hỗ trợ trạng thái `published/draft`.
+   - **Quản lý Người dùng**: Xem danh sách, sắp xếp, xem thông tin chi tiết, cập nhật thông tin người dùng.
+
+8. **🏗️ Kiến trúc & Mã nguồn chất lượng cao**
    - **Custom MVC Approach**: Tổ chức mã nguồn sạch sẽ, dễ mở rộng.
    - **Routing chuyên nghiệp**: Sử dụng `Bramus Router` để định tuyến các URL thân thiện (SEF - Search Engine Friendly) với hỗ trợ Middleware và Prefix.
    - **Templating linh hoạt**: Tích hợp `League/Plates` cho phép tạo Layout master, kế thừa View (View Inheritance) giống như Blade của Laravel.
    - **Cơ sở dữ liệu mạnh mẽ**: Không còn phải viết những câu truy vấn SQL thuần thô sơ. Dự án tích hợp `Illuminate Database` (Eloquent của Laravel), cho phép thiết lập Relationship (1-n, n-n) dễ dàng, an toàn chống lại SQL Injection.
 
-4. **🐳 Triển khai nhàn tênh với Docker (Containerization)**
+9. **🐳 Triển khai nhàn tênh với Docker (Containerization)**
    - Cấu hình sẵn sàng `docker-compose.yml`.
    - Môi trường gồm 3 Services: 
      - 🖥️ **Nginx (Webserver)**: Nhận và điều phối request (port 8000).
@@ -83,29 +117,57 @@ Dự án cung cấp một loạt các tính năng cơ bản nhưng thiết yếu
 
 ```text
 BookWorm/
-├── app/                  # (BỘ NÃO) Khu vực chứa mã PHP chính yếu
-│   ├── Controllers/      # Chứa các Class điều khiển luồng (VD: AuthController, HomeController...)
-│   │   └── Auth/         # Nhóm Controller xử lý logic Đăng nhập/Đăng ký/Quên mật khẩu
-│   ├── Models/           # Các Class Eloquent, đại diện cho các bảng trong DB
-│   ├── SessionGuard.php  # Lớp Custom bảo vệ, quản lý Authentication State
-│   └── functions.php     # Global Helper functions (các hàm hỗ trợ dùng ở mọi nơi)
-├── config/               # Cấu hình phụ (nếu thiết lập mở rộng)
+├── app/                        # (BỘ NÃO) Khu vực chứa mã PHP chính yếu
+│   ├── Controllers/            # Chứa các Class điều khiển luồng
+│   │   ├── Auth/               # Nhóm Controller xử lý Đăng nhập/Đăng ký/Quên mật khẩu
+│   │   │   ├── LoginController.php
+│   │   │   ├── RegisterController.php
+│   │   │   └── ForgotPasswordController.php
+│   │   ├── Manage/             # Nhóm Controller quản trị Admin
+│   │   │   └── ManagementController.php  # CRUD sản phẩm, đơn hàng, bài viết, user
+│   │   ├── HomeController.php  # Trang chủ, About, Search
+│   │   ├── ProductController.php # Hiển thị sản phẩm, chi tiết, phân loại
+│   │   ├── CartController.php  # Giỏ hàng & Thanh toán
+│   │   ├── BillController.php  # Lịch sử đơn hàng, hủy/xác nhận
+│   │   ├── ArticleController.php # Blog / Bài viết
+│   │   └── DashboardController.php # Dashboard phân tích dữ liệu
+│   ├── Models/                 # Các Class Eloquent, đại diện cho các bảng trong DB
+│   │   ├── Product.php         # Sách
+│   │   ├── ProductType.php     # Loại sách
+│   │   ├── User.php            # Người dùng
+│   │   ├── Cart.php            # Giỏ hàng
+│   │   ├── Bill.php            # Hóa đơn
+│   │   ├── BillDetail.php      # Chi tiết hóa đơn
+│   │   ├── Article.php         # Bài viết Blog
+│   │   ├── TacGia.php          # Tác giả
+│   │   └── NhaXuatBan.php      # Nhà xuất bản
+│   ├── SessionGuard.php        # Lớp Custom bảo vệ, quản lý Authentication State
+│   └── functions.php           # Global Helper functions (các hàm hỗ trợ dùng ở mọi nơi)
+├── config/                     # Cấu hình phụ (nếu thiết lập mở rộng)
 ├── docker/               
-│   ├── Dockerfile        # Các bước setup Image cho PHP container
+│   ├── Dockerfile              # Các bước setup Image cho PHP container
 │   └── nginx/
-│       └── default.conf  # Cấu hình Nginx thiết lập DocumentRoot trỏ vào /public
-├── public/               # (CỬA VÀO - ENTRY POINT) Chỉ thư mục này public ra web
-│   ├── css/, js/         # Chứa CSS, JavaScript, Images tĩnh
-│   └── index.php         # Tệp DUY NHẤT nhận Request -> Nạp Bootstrap -> Route
-├── vendor/               # (THƯ VIỆN) Chứa toàn bộ package của Composer (không đẩy lên Git)
-├── views/                # (GIAO DIỆN) Nơi chứa các tệp HTML kết hợp PHP (Plates logic)
-│   ├── layouts/          # Chứa bố cục chung (Header, Footer, Sidebar)
-│   └── ...               # Các file template theo từng chức năng (auth, home, error...)
-├── .env                  # Lưu trữ biến môi trường (Credentials, Mail Config...)
-├── bootstrap.php         # Tệp cực quan trọng khởi động Core: load autoload, thiết lập DB Manager
-├── composer.json         # Khai báo dependency và rule chạy chuẩn PSR-4 Autoload cho thư mục 'app'
-├── docker-compose.yml    # Trái tim của toàn bộ lệnh Docker Orchestration
-└── bookstore.sql         # Snapshot Database ban đầu, Docker sẽ auto-import file này
+│       └── default.conf        # Cấu hình Nginx thiết lập DocumentRoot trỏ vào /public
+├── public/                     # (CỬA VÀO - ENTRY POINT) Chỉ thư mục này public ra web
+│   ├── css/, js/, img/, fonts/ # Chứa CSS, JavaScript, Images, Fonts tĩnh
+│   └── index.php               # Tệp DUY NHẤT nhận Request -> Nạp Bootstrap -> Route
+├── vendor/                     # (THƯ VIỆN) Chứa toàn bộ package của Composer (không đẩy lên Git)
+├── views/                      # (GIAO DIỆN) Nơi chứa các tệp HTML kết hợp PHP (Plates logic)
+│   ├── layouts/                # Bố cục chung (Header, Footer, Search, Default layout)
+│   ├── auth/                   # Giao diện Đăng nhập, Đăng ký, Quên mật khẩu
+│   ├── products/               # Danh sách sản phẩm, Chi tiết sản phẩm
+│   ├── cart/                   # Giỏ hàng, Trang thanh toán thành công
+│   ├── bill/                   # Lịch sử mua hàng, Chi tiết hóa đơn
+│   ├── blog/                   # Danh sách bài viết, Chi tiết bài viết
+│   ├── about/                  # Trang giới thiệu
+│   ├── manage/                 # Trang quản trị Admin (Dashboard, CRUD sản phẩm/đơn hàng/bài viết/user)
+│   └── home.php                # Trang chủ
+├── .env                        # Lưu trữ biến môi trường (Credentials, Mail Config...)
+├── bootstrap.php               # Tệp cực quan trọng khởi động Core: load autoload, thiết lập DB Manager
+├── composer.json               # Khai báo dependency và rule chạy chuẩn PSR-4 Autoload cho thư mục 'app'
+├── docker-compose.yml          # Trái tim của toàn bộ lệnh Docker Orchestration
+├── server.php                  # Script hỗ trợ chạy PHP built-in server (dev không cần Docker)
+└── bookstore.sql               # Snapshot Database ban đầu, Docker sẽ auto-import file này
 ```
 
 ---
