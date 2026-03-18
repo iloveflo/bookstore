@@ -1,113 +1,109 @@
 <div align="center">
-  <h1>📚 BookWorm</h1>
-  <p>Một ứng dụng quản lý cửa hàng sách chuyên nghiệp và mạnh mẽ, được xây dựng trên nền tảng PHP theo kiến trúc MVC tự định nghĩa (Custom MVC Architecture). Dự án kết hợp khéo léo giữa các thư viện phổ biến như Eloquent ORM, Bramus Router, Plates Templating cùng với môi trường Container hóa Docker để mang lại trải nghiệm phát triển và triển khai dễ dàng nhất.</p>
-  <strong>🌍 Live Demo: <a href="https://bookworm-b69w.onrender.com" target="_blank">https://bookworm-b69w.onrender.com</a></strong><br>
-  <strong>⚠️ Lưu ý: Dự án chỉ mang tính chất học tập, không phải sản phẩm thương mại.</strong>
+  <h1>📚 BookStore</h1>
+  <p>Một ứng dụng quản lý cửa hàng sách chuyên nghiệp, được xây dựng bằng PHP thuần theo kiến trúc MVC tự định nghĩa (Custom MVC Architecture). Dự án kết hợp Eloquent ORM, Bramus Router, Plates Templating và Docker để mang lại trải nghiệm phát triển/triển khai đơn giản nhưng chuẩn chỉ.</p>
+  <strong>⚠️ Lưu ý: Dự án phục vụ mục đích học tập, không phải sản phẩm thương mại.</strong>
 </div>
 
 ---
 
 ## 📖 Bối cảnh & Mục tiêu dự án (Background & Purpose)
 
-**BookWorm** được khởi tạo với mục tiêu cung cấp một ví dụ thực tế về cách xây dựng một Web Application hoàn chỉnh bằng PHP thuần (Vanilla PHP) nhưng áp dụng các tiêu chuẩn thiết kế hiện đại (Modern Design Patterns). Thay vì sử dụng một framework khổng lồ như Laravel hay Symfony, dự án này lắp ráp các "mảnh ghép" (components) rời rạc lại với nhau thông qua Composer.
+**BookStore** được thiết kế như một ví dụ thực chiến cho việc xây dựng Web Application hoàn chỉnh bằng PHP thuần (Vanilla PHP) nhưng vẫn tuân thủ các tiêu chuẩn thiết kế hiện đại.
 
-Điều này giúp sinh viên, lập trình viên mới làm quen với PHP hiểu rõ hơn về:
-- Cách một Request được tiếp nhận và xử lý (Request Lifecycle).
-- Cơ chế Autoloading chuẩn PSR-4 của Composer hoạt động ra sao.
-- Cách triển khai hệ thống ORM (Object-Relational Mapping) độc lập.
-- Tính tổ chức, tách biệt logic (Controller), giao diện (View) và dữ liệu (Model) trong kiến trúc MVC.
+Thay vì dùng framework lớn (Laravel, Symfony), dự án ghép các "mảnh ghép" rời rạc thông qua Composer, giúp:
+- Hiểu rõ vòng đời Request (Request Lifecycle).
+- Nắm cơ chế Autoloading chuẩn PSR-4.
+- Thực hành ORM (Object-Relational Mapping) qua `illuminate/database`.
+- Tách bạch rõ ràng Controller / View / Model trong kiến trúc MVC.
 
 ---
 
 ## 🚀 Các tính năng nổi bật (Key Features)
 
-Dự án cung cấp một loạt các tính năng từ cơ bản tới nâng cao, thiết yếu cho một hệ thống quản lý & thương mại điện tử quy mô nhỏ:
+Dự án bao phủ đầy đủ luồng của một cửa hàng sách online quy mô nhỏ:
 
 1. **🛍️ Quản lý sản phẩm (Sách) & Phân loại (Danh mục)**
-   - Hiển thị danh sách các đầu sách với giao diện trực quan.
-   - Phân loại sách theo từng danh mục cụ thể (Ví dụ: Văn học, Khoa học, IT...).
-   - Chức năng tìm kiếm, lọc và phân trang (Pagination).
-   - Xem chi tiết thông tin sách (Tác giả, Nhà xuất bản, Giá, Mô tả).
+   - Danh sách đầu sách với giao diện trực quan.
+   - Phân loại sách theo danh mục (Văn học, Khoa học, IT, ...).
+   - Tìm kiếm, lọc và phân trang (Pagination).
+   - Xem chi tiết sách: tác giả, NXB, giá, mô tả.
 
 2. **🛒 Giỏ hàng & Thanh toán (Shopping Cart & Checkout)**
-   - Thêm sách vào giỏ hàng với số lượng tùy chọn (yêu cầu đăng nhập).
-   - Cập nhật số lượng, xóa sản phẩm khỏi giỏ hàng.
-   - Kiểm tra tồn kho tự động khi thêm/cộng dồn sản phẩm.
-   - Đặt hàng (Checkout) với thông tin: số điện thoại, địa chỉ giao hàng.
-   - Tự động cập nhật số lượng tồn kho và lượt bán (`sold`) sau khi đặt hàng thành công.
+   - Thêm sách vào giỏ (yêu cầu đăng nhập).
+   - Cập nhật số lượng, xóa sản phẩm khỏi giỏ.
+   - Kiểm tra tồn kho khi thêm/cộng dồn sản phẩm.
+   - Đặt hàng (Checkout) với số điện thoại, địa chỉ giao hàng.
+   - Tự động cập nhật tồn kho và lượt bán (`sold`) sau khi đặt hàng.
 
 3. **📦 Quản lý Đơn hàng / Hóa đơn (Order & Bill Management)**
-   - Xem lịch sử mua hàng (Payment History) với danh sách đơn hàng sắp xếp theo ngày.
+   - Xem lịch sử mua hàng (Payment History) theo thời gian.
    - Xem chi tiết từng hóa đơn (sản phẩm, số lượng, tổng tiền).
-   - Người mua có thể **Hủy đơn** (Cancel) hoặc **Xác nhận đã nhận hàng** (Received).
-   - Theo dõi trạng thái đơn hàng: Processing → Sending → Received / Canceled.
+   - Cho phép **Hủy đơn** hoặc **Xác nhận đã nhận hàng**.
+   - Theo dõi trạng thái: Processing → Sending → Received / Canceled.
 
 4. **📝 Hệ thống Blog / Bài viết (Blog & Articles)**
-   - Trang Blog hiển thị danh sách bài viết đã xuất bản (`published`) với phân trang.
+   - Trang Blog với danh sách bài viết `published`, có phân trang.
    - Tìm kiếm bài viết theo tiêu đề.
    - Xem chi tiết bài viết kèm thông tin tác giả (Admin).
-   - Gợi ý "Bài viết liên quan" (3 bài mới nhất) ở cuối mỗi bài viết.
+   - Gợi ý 3 bài viết liên quan mới nhất ở cuối mỗi bài.
 
-5. **🔐 Hệ thống Xác thực & Phân quyền nâng cao (Authentication & Authorization)**
-   - Đăng nhập (Login) và Đăng ký (Register) người dùng thông thường.
-   - **Tích hợp OAuth2**: Hỗ trợ đăng nhập nhanh bằng nền tảng thứ 3 như **Google** và **Facebook** (được thiết lập sẵn cấu hình qua file `.env`).
-   - Quản lý phiên đăng nhập an toàn thông qua lớp `SessionGuard`.
-   - Tính năng "Quên mật khẩu" (Forgot Password): Sinh token reset mật khẩu an toàn và gửi liên kết khôi phục tới người dùng bằng Email thật thông qua `PHPMailer` (hỗ trợ SMTP).
-   - Quản lý thông tin cá nhân: Cập nhật hồ sơ người dùng, đổi mật khẩu.
+5. **🔐 Xác thực & Phân quyền (Authentication & Authorization)**
+   - Đăng nhập / Đăng ký người dùng thường.
+   - Quản lý phiên đăng nhập an toàn qua lớp `SessionGuard`.
+   - Quên mật khẩu: sinh token reset, gửi link khôi phục qua email thực (`PHPMailer` + SMTP).
+   - Quản lý thông tin cá nhân: cập nhật hồ sơ, đổi mật khẩu.
+   - (Tùy chọn) Tích hợp OAuth2 (Google/Facebook) nếu bạn cấu hình `.env` phù hợp.
 
-6. **📊 Trang Dashboard phân tích dữ liệu (Admin Analytics Dashboard)**
-   - Bảng tổng quan hiển thị: Tổng doanh thu, Tổng đơn hàng, Tổng sản phẩm, Tổng người dùng.
-   - **Biểu đồ doanh thu** theo thời gian với bộ lọc linh hoạt: Hôm nay / Tháng / Quý / Năm.
-   - **Top 5 sản phẩm bán chạy** nhất (biểu đồ).
-   - **Doanh số theo loại sách** (thống kê theo danh mục).
-   - **Trạng thái đơn hàng**: Phân bổ đơn hàng theo trạng thái (Hoàn thành, Đang giao, Chờ duyệt, Đã hủy).
-   - **Phương thức thanh toán**: Thống kê COD vs. Chuyển khoản.
+6. **📊 Dashboard phân tích (Admin Analytics Dashboard)**
+   - Tổng quan: doanh thu, đơn hàng, sản phẩm, người dùng.
+   - Biểu đồ doanh thu theo mốc: Hôm nay / Tháng / Quý / Năm.
+   - Top 5 sản phẩm bán chạy.
+   - Doanh số theo loại sách (theo danh mục).
+   - Phân bổ trạng thái đơn hàng.
+   - Thống kê phương thức thanh toán (COD / Chuyển khoản).
 
 7. **🛠️ Trang Quản trị Admin (Admin Management Panel)**
-   - **Quản lý Sản phẩm**: Thêm mới, Chỉnh sửa, Xóa sách. Sắp xếp và lọc danh sách.
-   - **Quản lý Đơn hàng**: Xem tất cả đơn hàng, chi tiết hóa đơn, Hủy đơn, Xác nhận giao hàng (Sending).
-   - **Quản lý Bài viết**: CRUD đầy đủ (Thêm, Sửa, Xóa bài viết Blog) với hỗ trợ trạng thái `published/draft`.
-   - **Quản lý Người dùng**: Xem danh sách, sắp xếp, xem thông tin chi tiết, cập nhật thông tin người dùng.
+   - **Sản phẩm**: Thêm / Sửa / Xóa, sắp xếp và lọc.
+   - **Đơn hàng**: Xem, duyệt, hủy, cập nhật trạng thái giao hàng.
+   - **Bài viết**: CRUD bài Blog với trạng thái `published/draft`.
+   - **Người dùng**: Danh sách, chi tiết và cập nhật thông tin.
 
-8. **🏗️ Kiến trúc & Mã nguồn chất lượng cao**
-   - **Custom MVC Approach**: Tổ chức mã nguồn sạch sẽ, dễ mở rộng.
-   - **Routing chuyên nghiệp**: Sử dụng `Bramus Router` để định tuyến các URL thân thiện (SEF - Search Engine Friendly) với hỗ trợ Middleware và Prefix.
-   - **Templating linh hoạt**: Tích hợp `League/Plates` cho phép tạo Layout master, kế thừa View (View Inheritance) giống như Blade của Laravel.
-   - **Cơ sở dữ liệu mạnh mẽ**: Không còn phải viết những câu truy vấn SQL thuần thô sơ. Dự án tích hợp `Illuminate Database` (Eloquent của Laravel), cho phép thiết lập Relationship (1-n, n-n) dễ dàng, an toàn chống lại SQL Injection.
+8. **🏗️ Kiến trúc & Mã nguồn**
+   - **Custom MVC**: Cấu trúc rõ ràng, dễ mở rộng.
+   - **Routing** với `bramus/router`: URL thân thiện, hỗ trợ prefix/middleware.
+   - **Templating** với `league/plates`: layout, kế thừa view tương tự Blade.
+   - **ORM Eloquent** (`illuminate/database`): Relationship 1-n, n-n, hạn chế SQL Injection.
 
-9. **🐳 Triển khai nhàn tênh với Docker (Containerization)**
-   - Cấu hình sẵn sàng `docker-compose.yml`.
-   - Môi trường gồm 3 Services: 
-     - 🖥️ **Nginx (Webserver)**: Nhận và điều phối request (port 8000).
-     - 🐘 **PHP-FPM (App)**: Xử lý logic ứng dụng.
-     - 🐬 **MySQL 8.0 (Database)**: Lưu trữ dữ liệu.
-   - Tự động import Database mẫu cực tiện lợi ngay trong lần khởi chạy đầu tiên (`bookstore.sql`).
+9. **🐳 Container hóa với Docker**
+   - Cấu hình sẵn `docker-compose.yml`.
+   - 2 services chính:
+     - 🖥️ **app**: Nginx + PHP-FPM (container `bookstore_app`, map `8000:80`).
+     - 🐬 **db**: MySQL 8.0 (container `bookstore_db`, map `3307:3306`).
+   - Tự động import dữ liệu mẫu từ `bookstore.sql` ở lần chạy đầu.
 
 ---
 
-## 🛠 Điểm tâm Công nghệ (Technology Stack)
-
-Ứng dụng được nuôi dưỡng bởi các công nghệ dưới đây:
+## 🛠 Công nghệ sử dụng (Technology Stack)
 
 ### Backend 
-- **Ngôn ngữ:** [PHP 8.x+](https://www.php.net/) - Ngôn ngữ lập trình chính.
-- **Dependency Manager:** [Composer](https://getcomposer.org/) - Quản lý thư viện.
-- **Routing:** [bramus/router](https://github.com/bramus/router) (^1.6) - Xử lý điều hướng linh hoạt, nhanh nhẹn.
-- **Templating Engine:** [league/plates](https://platesphp.com/) (3.*) - Native PHP Templates, không cần compile như Twig hay Blade.
-- **ORM / Database:** [illuminate/database](https://github.com/illuminate/database) (^11.0) - Trái tim quản lý dữ liệu xuất sắc.
-- **Environment:** [vlucas/phpdotenv](https://github.com/vlucas/phpdotenv) (^5.4) - Quản lý bảo mật các thông tin nhạy cảm qua `.env`.
-- **Mailing:** [PHPMailer](https://github.com/PHPMailer/PHPMailer) (^7.0) - Cỗ máy gửi email đáng tin cậy.
+- **Ngôn ngữ:** [PHP 8.x+](https://www.php.net/)
+- **Dependency Manager:** [Composer](https://getcomposer.org/)
+- **Routing:** [bramus/router](https://github.com/bramus/router) `^1.6`
+- **Templating Engine:** [league/plates](https://platesphp.com/) `3.*`
+- **ORM / Database:** [illuminate/database](https://github.com/illuminate/database) `^11.0`
+- **Environment:** [vlucas/phpdotenv](https://github.com/vlucas/phpdotenv) `^5.4`
+- **Mailing:** [PHPMailer](https://github.com/PHPMailer/PHPMailer) `^7.0`
 
 ### Infrastructure & DevOps
 - **Docker** & **Docker Compose**
-- **Nginx** (Alpine version)
-- **MySQL** (Tag: 8.0)
+- **Nginx** (Alpine)
+- **MySQL 8.0**
 
-### 🚀 CI/CD Pipeline & Cloud Deployment
-- **GitHub Actions:** Tự động hóa luồng CI/CD mỗi khi có thay đổi trên nhánh `main`.
-- **Docker Hub:** Lưu trữ và quản lý Docker Images (Container Registry).
-- **Render:** Triển khai (hosting services) ứng dụng Web App tự động dựa trên Docker Image.
-- **Aiven:** Cloud Database hosting được sử dụng để chạy MySQL trên môi trường production.
+### 🚀 CI/CD Pipeline & Triển khai
+- **GitHub Actions:** Workflow `.github/workflows/docker-image.yml` tự động build & push Docker image mỗi khi push lên nhánh `main` (trừ các file `.md`, `.txt`, `.gitignore`, chính file workflow).
+- **Docker Hub:** Image được push với tag: `${DOCKER_USERNAME}/bookstore:tagname` (thiết lập qua `secrets`).
+- **Render / Cloud khác:** Trigger deploy thông qua `RENDER_DEPLOY_HOOK` (HTTP POST), giúp tự động cập nhật môi trường production.
+- **MySQL Managed (ví dụ: Aiven):** Có thể dùng cloud DB để tách biệt database khỏi server app.
 
 ---
 
