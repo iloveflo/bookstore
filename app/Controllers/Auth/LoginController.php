@@ -123,23 +123,30 @@ class LoginController extends Controller
     // ==========================================
     public function loginGoogle()
     {
+        // Tạo tham số state để chống CSRF
+        $_SESSION['oauth_state'] = bin2hex(random_bytes(16));
+
         $params = [
             'client_id'     => $_ENV['GOOGLE_CLIENT_ID'],
             'redirect_uri'  => $_ENV['GOOGLE_REDIRECT_URI'],
             'response_type' => 'code',
             'scope'         => 'email profile',
-            'access_type'   => 'online'
+            'access_type'   => 'online',
+            'state'         => $_SESSION['oauth_state'] // Gửi state sang Google
         ];
-        // Chuyển hướng người dùng sang Google
         header("Location: https://accounts.google.com/o/oauth2/auth?" . http_build_query($params));
         exit;
     }
 
     public function callbackGoogle()
     {
+        // Xác minh state parameter
+        if (empty($_GET['state']) || (isset($_SESSION['oauth_state']) && $_GET['state'] !== $_SESSION['oauth_state'])) {
+            die('Xác thực thất bại do lỗi CSRF/State. Vui lòng thử lại.');
+        }
+
         if (!isset($_GET['code'])) die('Không tìm thấy mã xác thực từ Google');
 
-        // 1. Đổi Code lấy Access Token
         $tokenParams = [
             'client_id'     => $_ENV['GOOGLE_CLIENT_ID'],
             'client_secret' => $_ENV['GOOGLE_CLIENT_SECRET'],
@@ -149,36 +156,46 @@ class LoginController extends Controller
         ];
 
         $tokenData = $this->httpPost('https://oauth2.googleapis.com/token', $tokenParams);
-
         if (!isset($tokenData['access_token'])) die('Lỗi lấy Token Google');
 
-        // 2. Dùng Token lấy thông tin User
         $userInfo = $this->httpGet('https://www.googleapis.com/oauth2/v1/userinfo', $tokenData['access_token']);
 
-        // 3. Xử lý lưu vào DB bằng ELOQUENT
         $this->processUserLogin($userInfo['email'], $userInfo['name'], 'google_id', $userInfo['id']);
     }
 
     // ==========================================
-    // 2. FACEBOOK LOGIN
+    // 2. FACEBOOK LOGIN (Đã được nâng cấp bảo mật CSRF)
     // ==========================================
     public function loginFacebook()
     {
+        // Tạo tham số state ngẫu nhiên và lưu vào Session
+        $_SESSION['oauth_facebook_state'] = bin2hex(random_bytes(16));
+
         $params = [
             'client_id'     => $_ENV['FACEBOOK_CLIENT_ID'],
             'redirect_uri'  => $_ENV['FACEBOOK_REDIRECT_URI'],
             'response_type' => 'code',
-            'scope'         => 'email,public_profile'
+            'scope'         => 'email,public_profile',
+            'state'         => $_SESSION['oauth_facebook_state'] // Bắt buộc cho bảo mật
         ];
+        
+        // Chuyển hướng sang Facebook Auth Dialog
         header("Location: https://www.facebook.com/v18.0/dialog/oauth?" . http_build_query($params));
         exit;
     }
 
     public function callbackFacebook()
     {
-        if (!isset($_GET['code'])) die('Không tìm thấy mã xác thực từ Facebook');
+        // 1. Kiểm tra State để chặn tấn công CSRF
+        if (empty($_GET['state']) || (isset($_SESSION['oauth_facebook_state']) && $_GET['state'] !== $_SESSION['oauth_facebook_state'])) {
+            die('Xác thực thất bại do lỗi State/CSRF. Vui lòng thử lại.');
+        }
 
-        // 1. Đổi Code lấy Token
+        if (!isset($_GET['code'])) {
+            die('Không tìm thấy mã xác thực Authorization Code từ Facebook');
+        }
+
+        // 2. Đổi Authorization Code lấy Access Token
         $urlToken = "https://graph.facebook.com/v18.0/oauth/access_token?" . http_build_query([
             'client_id'     => $_ENV['FACEBOOK_CLIENT_ID'],
             'client_secret' => $_ENV['FACEBOOK_CLIENT_SECRET'],
@@ -188,54 +205,56 @@ class LoginController extends Controller
 
         $tokenData = $this->httpGet($urlToken);
 
-        if (!isset($tokenData['access_token'])) die('Lỗi lấy Token Facebook');
+        if (!isset($tokenData['access_token'])) {
+            die('Lỗi trao đổi Access Token với Facebook Graph API');
+        }
 
-        // 2. Lấy thông tin User
+        // 3. Sử dụng Access Token để truy vấn thông tin User (yêu cầu cụ thể các trường id, name, email)
         $urlInfo = "https://graph.facebook.com/me?fields=id,name,email&access_token=" . $tokenData['access_token'];
         $userInfo = $this->httpGet($urlInfo);
 
-        // 3. Xử lý lưu vào DB bằng ELOQUENT
-        $this->processUserLogin($userInfo['email'], $userInfo['name'], 'facebook_id', $userInfo['id']);
+        if (!isset($userInfo['id'])) {
+            die('Không thể lấy thông tin định danh từ Facebook.');
+        }
+
+        // Lưu ý kỹ thuật: Không phải tài khoản Facebook nào cũng có Email (ví dụ tài khoản đăng ký bằng SĐT).
+        // Cần dự phòng trường hợp $userInfo['email'] bị null trước khi đưa vào hàm xử lý chung.
+        $userEmail = $userInfo['email'] ?? $userInfo['id'] . '@facebook.local'; 
+
+        // 4. Bàn giao cho hàm xử lý lưu Database
+        $this->processUserLogin($userEmail, $userInfo['name'], 'facebook_id', $userInfo['id']);
     }
 
     // ==========================================
-    // 3. HÀM XỬ LÝ CHUNG (QUAN TRỌNG NHẤT)
+    // HÀM XỬ LÝ CHUNG CHO SOCIAL
     // ==========================================
     private function processUserLogin($email, $name, $columnId, $socialId)
     {
-        // Dùng Eloquent để tìm user (Thay thế PDO)
         $user = User::where($columnId, $socialId)
             ->orWhere('email', $email)
             ->first();
 
         if ($user) {
-            // User cũ -> Cập nhật ID mạng xã hội nếu chưa có
             if (empty($user->$columnId)) {
                 $user->$columnId = $socialId;
                 $user->save();
             }
         } else {
-            // User mới -> Tạo bằng Eloquent Create
             $user = User::create([
                 'name'      => $name,
                 'email'     => $email,
-                'password'  => password_hash(uniqid(), PASSWORD_DEFAULT), // Pass ngẫu nhiên
-                'phone'     => null, // DB phải allow NULL
-                'address'   => null, // DB phải allow NULL
+                'password'  => password_hash(uniqid(rand(), true), PASSWORD_DEFAULT), // Random hóa sâu hơn
                 $columnId   => $socialId
             ]);
         }
 
-        // Lưu Session đăng nhập (Native PHP)
-        $_SESSION['user_id'] = $user->id;
-        $_SESSION['user_name'] = $user->name;
-        $_SESSION['user_email'] = $user->email;
+        // SỬ DỤNG GUARD THAY VÌ GÁN SESSION THỦ CÔNG
+        // Cần đảm bảo hàm Guard::login có hỗ trợ đăng nhập trực tiếp bằng Object User mà không cần check password
+        Guard::login($user); 
 
-        // Chuyển hướng về trang chủ
         header("Location: /");
         exit;
     }
-
     // ==========================================
     // 4. CÁC HÀM HỖ TRỢ HTTP (cURL)
     // ==========================================
