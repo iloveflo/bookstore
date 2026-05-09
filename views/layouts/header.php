@@ -61,30 +61,44 @@
                     <?php if (!\App\SessionGuard::isUserLoggedIn()) : ?>
                         <a href="login" class="nav-item nav-link <?= ($activePage == 'login' or $activePage == 'register') ? 'active' : ''; ?>">👤Tài khoản</a>
                     <?php else : ?>
-                        <?php if (\App\SessionGuard::isAdminLoggedIn()) : ?>
+                        <?php if (\App\SessionGuard::isStaffLoggedIn()) : ?>
                             <div class="dropdown">
                                 <a href="#" class="dropdown-toggle nav-item nav-link" data-bs-toggle="dropdown" role="button" aria-expanded="false">
                                     Quản Lý<span class="caret"></span>
                                 </a>
-                                <ul class="dropdown-menu" role="menu">
-                                    <li class="ps-4 mb-2 text-start">
-                                        <a href="manageProduct">Sản Phẩm</a>
+                                <ul class="dropdown-menu shadow border-0 mt-2" role="menu" style="min-width: 180px;">
+                                    <?php if (\App\SessionGuard::can('product.view')): ?>
+                                    <li class="ps-4 py-2 text-start">
+                                        <a href="manageProduct" class="text-dark text-decoration-none"><i class="fas fa-book me-2 text-primary"></i> Sản Phẩm</a>
                                     </li>
-                                    <li class="ps-4 mb-2 text-start">
-                                        <a href="users">Người Dùng</a>
+                                    <?php endif; ?>
+
+                                    <?php if (\App\SessionGuard::can('user.view_all') || \App\SessionGuard::can('user.view_customers')): ?>
+                                    <li class="ps-4 py-2 text-start">
+                                        <a href="users" class="text-dark text-decoration-none"><i class="fas fa-users me-2 text-primary"></i> Người Dùng</a>
                                     </li>
-                                    <li class="ps-4 mb-2 text-start">
-                                        <a href="manageBill">Đơn Hàng</a>
+                                    <?php endif; ?>
+
+                                    <?php if (\App\SessionGuard::can('bill.view')): ?>
+                                    <li class="ps-4 py-2 text-start">
+                                        <a href="manageBill" class="text-dark text-decoration-none"><i class="fas fa-file-invoice-dollar me-2 text-primary"></i> Đơn Hàng</a>
                                     </li>
-                                    <li class="ps-4 mb-2 text-start">
-                                        <a href="manageArticles">Bài Viết</a>
+                                    <?php endif; ?>
+
+                                    <?php if (\App\SessionGuard::can('article.view')): ?>
+                                    <li class="ps-4 py-2 text-start">
+                                        <a href="manageArticles" class="text-dark text-decoration-none"><i class="fas fa-newspaper me-2 text-primary"></i> Bài Viết</a>
                                     </li>
-                                    <li class="ps-4 mb-2 text-start">
-                                        <a href="dashboard">Dashboard</a>
+                                    <?php endif; ?>
+
+                                    <?php if (\App\SessionGuard::can('dashboard.view')): ?>
+                                    <li class="ps-4 py-2 text-start border-top mt-1">
+                                        <a href="dashboard" class="text-dark text-decoration-none"><i class="fas fa-chart-line me-2 text-primary"></i> Dashboard</a>
                                     </li>
+                                    <?php endif; ?>
                                 </ul>
                             </div>
-                        <?php endif ?>
+                        <?php endif; ?>
                         <div class="dropdown">
                             <a href="#" class="dropdown-toggle nav-item nav-link" data-bs-toggle="dropdown" role="button" aria-expanded="false">
                                 <span>👤</i> </span><?= $this->e(\App\SessionGuard::user()->name) ?> <span class="caret"></span>

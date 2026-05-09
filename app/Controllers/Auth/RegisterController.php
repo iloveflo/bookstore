@@ -10,9 +10,9 @@ class RegisterController extends Controller
 {
     public function __construct()
     {
-        // Kích hoạt lại logic Guest Middleware: 
-        // Ngăn chặn các user đã có phiên đăng nhập (session active) thực hiện lại hành vi POST/GET đăng ký.
-        if (Guard::isUserLoggedIn()) {
+        // Ngăn chặn các user đã đăng nhập vào trang đăng ký, 
+        // TRỪ KHI họ có quyền tạo người dùng (như Admin muốn thêm nhân sự).
+        if (Guard::isUserLoggedIn() && !Guard::can('user.create')) {
             redirect('/home');
         }
 
@@ -54,7 +54,13 @@ class RegisterController extends Controller
             // Không có lỗi -> Ghi vào CSDL
             $this->createUser($safeData);
 
-            $messages = ['success' => 'Tài khoản đã được tạo thành công. Vui lòng đăng nhập.'];
+            $messages = ['success' => 'Tài khoản đã được tạo thành công.'];
+            
+            // Nếu người tạo là Admin đang thêm nhân sự, quay lại trang quản lý người dùng
+            if (Guard::isUserLoggedIn() && Guard::can('user.view_all')) {
+                redirect('users', ['messages' => $messages]);
+            }
+            
             redirect('login', ['messages' => $messages]);
         }
 

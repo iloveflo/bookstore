@@ -1,3 +1,39 @@
+<?php
+use App\SessionGuard as Guard;
+$currentUser = Guard::user();
+
+// Xác định nhãn khoảng thời gian báo cáo chi tiết
+$rangeLabel = '';
+$today = date('d/m/Y');
+switch ($filterType ?? 'month') {
+    case 'today': 
+        $rangeLabel = "Ngày $today"; 
+        break;
+    case 'month': 
+        $firstDay = date('01/m/Y');
+        $lastDay = date('t/m/Y');
+        $rangeLabel = "Từ ngày $firstDay đến ngày $lastDay";
+        break;
+    case 'quarter': 
+        $currentMonth = date('n');
+        $currentYear = date('Y');
+        $quarter = ceil($currentMonth / 3);
+        $startMonth = ($quarter - 1) * 3 + 1;
+        $endMonth = $startMonth + 2;
+        $firstDay = date('01/' . str_pad($startMonth, 2, '0', STR_PAD_LEFT) . '/' . $currentYear);
+        $lastDateOfEndMonth = date('t', strtotime("$currentYear-$endMonth-01"));
+        $lastDay = $lastDateOfEndMonth . '/' . str_pad($endMonth, 2, '0', STR_PAD_LEFT) . '/' . $currentYear;
+        $rangeLabel = "Từ ngày $firstDay đến ngày $lastDay";
+        break;
+    case 'year': 
+        $rangeLabel = "Từ ngày 01/01/" . date('Y') . " đến ngày 31/12/" . date('Y');
+        break;
+    default:
+        $firstDay = date('01/m/Y');
+        $lastDay = date('t/m/Y');
+        $rangeLabel = "Từ ngày $firstDay đến ngày $lastDay";
+}
+?>
 <!doctype html>
 <html lang="en">
 
@@ -14,25 +50,115 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.4/dist/Chart.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
+    <style>
+        .bd-placeholder-img {
+            font-size: 1.125rem;
+            text-anchor: middle;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            user-select: none;
+        }
+
+        @media (min-width: 768px) {
+            .bd-placeholder-img-lg {
+                font-size: 3.5rem;
+            }
+        }
+
+        /* Premium Header Styling */
+        .admin-header {
+            background-color: #1a1d20 !important;
+            border-bottom: 1px solid #343a40;
+        }
+        
+        .user-profile-box {
+            display: flex;
+            align-items: center;
+            padding: 5px 20px;
+            border-left: 1px solid #343a40;
+            margin-right: 10px;
+        }
+
+        .user-info-text {
+            display: flex;
+            flex-direction: column;
+            margin-left: 12px;
+            line-height: 1.2;
+        }
+
+        .user-name {
+            color: #fff;
+            font-weight: 600;
+            font-size: 1.05rem;
+        }
+
+        .user-role {
+            font-size: 0.75rem;
+            color: #0dcaf0;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 700;
+        }
+
+        .btn-logout {
+            background: rgba(220, 53, 69, 0.1);
+            color: #ff6b6b !important;
+            border: 1px solid rgba(220, 53, 69, 0.2);
+            border-radius: 6px;
+            padding: 6px 15px !important;
+            font-size: 0.85rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            margin-right: 15px;
+        }
+
+        .btn-logout:hover {
+            background: #dc3545;
+            color: #fff !important;
+        }
+
+        .user-avatar {
+            display: flex;
+            align-items: center;
+        }
+
+        .navbar-brand h5 {
+            letter-spacing: 1px;
+        }
+    </style>
+
     <link href="/css/dashboard.css" rel="stylesheet">
     <link href="/css/style.css" rel="stylesheet">
 </head>
 
 <body style="background-color: #f4f6f9;">
 
-    <header class="navbar navbar-dark sticky-top bg-dark flex-md-nowrap p-0 shadow">
+    <header class="navbar navbar-dark sticky-top admin-header flex-md-nowrap p-0 shadow-sm">
         <a href="home" class="navbar-brand col-md-3 col-lg-2 me-0 px-3 fs-6 ">
             <h5 class="m-0 display-4 fs-5 text-secondary fw-bold"><span class="text-primary fs-5 fw-bold">BOOK</span>worm</h5>
         </a>
-        <button class="navbar-toggler position-absolute d-md-none collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu">
+        <button class="navbar-toggler position-absolute d-md-none collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
         </button>
-        <div class="w-100 boder-bottom p-1">
-            <h3 class="fs-4 px-2 text-white text-center text-uppercase pt-2">Báo Cáo Tổng Quan</h3>
-        </div>
-        <div class="navbar-nav">
-            <div class="nav-item text-nowrap">
-                <a class="nav-link px-3" href="logout">Đăng xuất</a>
+        
+        <div class="d-flex align-items-center ms-auto">
+            <div class="user-profile-box d-none d-md-flex">
+                <div class="user-avatar">
+                    <i class="fas fa-user-circle fa-2x text-secondary"></i>
+                </div>
+                <div class="user-info-text">
+                    <span class="user-name"><?= $this->e($currentUser->name) ?></span>
+                    <span class="user-role"><?= $this->e($currentUser->getRoleLabel()) ?></span>
+                </div>
+            </div>
+            
+            <div class="navbar-nav">
+                <div class="nav-item text-nowrap">
+                    <a class="nav-link btn-logout px-3" href="logout" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
+                        <i class="fas fa-sign-out-alt me-1"></i> Đăng xuất
+                    </a>
+                    <form id="logout-form" action="logout" method="POST" style="display: none;"></form>
+                </div>
             </div>
         </div>
     </header>
@@ -42,17 +168,52 @@
             <nav id="sidebarMenu" class="col-md-3 col-lg-2 d-md-block bg-white sidebar collapse shadow-sm">
                 <div class="position-sticky pt-3 sidebar-sticky">
                     <ul class="nav flex-column">
-                        <li class="nav-item"><a class="nav-link active" href="home"><i class="fas fa-home"></i> Trang Chủ</a></li>
-                        <li class="nav-item"><a class="nav-link" href="manageProduct"><i class="fa fa-book"></i> Sản Phẩm</a></li>
-                        <li class="nav-item"><a class="nav-link" href="manageBill"><i class="fa fa-shopping-cart"></i> Đơn Hàng</a></li>
-                        <li class="nav-item"><a class="nav-link" href="users"><i class="fas fa-user-friends"></i> Người Dùng</a></li>
-                        <li class="nav-item"><a class="nav-link" href="manageArticles"><i class="fas fa-newspaper"></i> Bài Viết</a></li>
                         <li class="nav-item">
-                            <a class="nav-link" href="dashboard">
+                            <a class="nav-link" href="home"><i class="fas fa-home"></i> Trang Chủ</a>
+                        </li>
+                        <?php if ($currentUser->can('product.view')): ?>
+                        <li class="nav-item">
+                            <a class="nav-link" href="manageProduct">
+                                <i class="fa fa-book"></i>
+                                Sản Phẩm
+                            </a>
+                        </li>
+                        <?php endif; ?>
+
+                        <?php if ($currentUser->can('bill.view')): ?>
+                        <li class="nav-item">
+                            <a class="nav-link" href="manageBill">
+                                <i class="fa fa-shopping-cart"></i>
+                                Đơn Hàng
+                            </a>
+                        </li>
+                        <?php endif; ?>
+
+                        <?php if ($currentUser->can('user.view_all') || $currentUser->can('user.view_customers')): ?>
+                        <li class="nav-item">
+                            <a class="nav-link" href="users">
+                                <i class="fas fa-user-friends"></i>
+                                Người Dùng
+                            </a>
+                        </li>
+                        <?php endif; ?>
+
+                        <?php if ($currentUser->can('article.view')): ?>
+                        <li class="nav-item">
+                            <a class="nav-link" href="manageArticles">
+                                <i class="fas fa-newspaper"></i> Bài Viết
+                            </a>
+                        </li>
+                        <?php endif; ?>
+
+                        <?php if ($currentUser->can('dashboard.view')): ?>
+                        <li class="nav-item">
+                            <a class="nav-link active" aria-current="page" href="dashboard">
                                 <i class="fas fa-chart-line"></i>
                                 Dashboard
                             </a>
                         </li>
+                        <?php endif; ?>
                     </ul>
                 </div>
             </nav>
@@ -77,7 +238,20 @@
 
                 <div id="reportContainer" class="p-2 bg-white rounded-3">
                     
-                    <h3 class="text-center mb-4 text-uppercase fw-bold text-dark d-none d-print-block print-title">BÁO CÁO KẾT QUẢ KINH DOANH</h3>
+                    <!-- Phần thông tin chỉ hiện khi in/xuất PDF -->
+                    <div class="d-none d-print-block print-header mb-4">
+                        <h3 class="text-center text-uppercase fw-bold text-dark mb-1">BÁO CÁO KẾT QUẢ KINH DOANH</h3>
+                        <p class="text-center text-secondary mb-3"><?= $rangeLabel ?></p>
+                        
+                        <div class="row border-top border-bottom py-2 mb-3 bg-light" style="font-size: 0.9rem;">
+                            <div class="col-6">
+                                <strong>Người xuất:</strong> <?= $this->e($currentUser->name) ?> (<?= $this->e($currentUser->getRoleLabel()) ?>)
+                            </div>
+                            <div class="col-6 text-end">
+                                <strong>Thời điểm xuất:</strong> <?= date('H:i:s d/m/Y') ?>
+                            </div>
+                        </div>
+                    </div>
 
                     <div class="row g-3 mb-4">
                         <div class="col-md-3">
@@ -174,23 +348,22 @@
             // CHỨC NĂNG XUẤT PDF
             // --------------------------------------------------------
             $('#btnExportPDF').click(function () {
-                // Thêm tiêu đề tạm thời cho PDF
-                $('.print-title').removeClass('d-none');
+                // Thêm các thành phần ẩn dành riêng cho in ấn
+                $('.print-header').removeClass('d-none');
                 
                 var element = document.getElementById('reportContainer');
                 var opt = {
-                    margin:       [0.5, 0.5, 0.5, 0.5], // Tránh cắt trên dưới
+                    margin:       [0.5, 0.5, 0.5, 0.5],
                     filename:     'Bao_Cao_Bookworm_' + new Date().getTime() + '.pdf',
                     image:        { type: 'jpeg', quality: 0.98 },
                     html2canvas:  { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
-                    jsPDF:        { unit: 'px', format: [element.offsetWidth, element.offsetHeight + 100], orientation: 'portrait', hotfixes: ["px_scaling"] }, 
+                    jsPDF:        { unit: 'px', format: [element.offsetWidth, element.offsetHeight + 120], orientation: 'portrait', hotfixes: ["px_scaling"] }, 
                     pagebreak:    { mode: 'avoid-all' }
                 };
 
-                // Bắt đầu xuất PDF với chiều cao tùy chỉnh của phần tử container để nó nằm hoàn toàn trên 1 trang 
                 html2pdf().set(opt).from(element).save().then(function(){
-                    // Xóa tiêu đề sau khi xuất xong
-                    $('.print-title').addClass('d-none');
+                    // Ẩn lại sau khi xuất xong
+                    $('.print-header').addClass('d-none');
                 });
             });
 

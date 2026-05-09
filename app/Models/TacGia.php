@@ -9,6 +9,7 @@ class TacGia extends Model
     protected $table = 'tacgia';
     protected $primaryKey = 'ma_tac_gia';
     public $incrementing = false;
+    public $timestamps = false;
     protected $fillable = ['ma_tac_gia', 'ten_tac_gia'];
 
 }

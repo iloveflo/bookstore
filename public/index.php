@@ -74,6 +74,17 @@ $router->get('/manage/([A-Za-z0-9]+)', '\App\Controllers\Manage\ManagementContro
 $router->post('/manage/update/([A-Za-z0-9]+)', '\App\Controllers\Manage\ManagementController@update');
 $router->post('/manage/delete/([A-Za-z0-9]+)', '\App\Controllers\Manage\ManagementController@delete');
 
+// Metadata management
+$router->post('/addType', '\App\Controllers\Manage\ManagementController@addType');
+$router->post('/updateType', '\App\Controllers\Manage\ManagementController@updateType');
+$router->post('/deleteType/([A-Za-z0-9]+)', '\App\Controllers\Manage\ManagementController@deleteType');
+$router->post('/addAuthor', '\App\Controllers\Manage\ManagementController@addAuthor');
+$router->post('/updateAuthor', '\App\Controllers\Manage\ManagementController@updateAuthor');
+$router->post('/deleteAuthor/([A-Za-z0-9]+)', '\App\Controllers\Manage\ManagementController@deleteAuthor');
+$router->post('/addPublisher', '\App\Controllers\Manage\ManagementController@addPublisher');
+$router->post('/updatePublisher', '\App\Controllers\Manage\ManagementController@updatePublisher');
+$router->post('/deletePublisher/([A-Za-z0-9]+)', '\App\Controllers\Manage\ManagementController@deletePublisher');
+
 //Management Bill routes
 $router->get('/manageBill', '\App\Controllers\Manage\ManagementController@manageBill');
 $router->get('/manageDetailBill', '\App\Controllers\Manage\ManagementController@manageDetailBill');
@@ -97,8 +108,12 @@ $router->get('/users', '\App\Controllers\Manage\ManagementController@getAllUsers
 $router->post('/users', '\App\Controllers\Manage\ManagementController@sortAllUsers');
 $router->get('/userInfo', '\App\Controllers\Manage\ManagementController@userInfo');
 $router->post('/updateUser', '\App\Controllers\Manage\ManagementController@updateUser');
+$router->get('/getUserOrders', '\App\Controllers\Manage\ManagementController@getUserOrders');
 $router->get('/passChange', '\App\Controllers\Manage\ManagementController@passChange');
 $router->post('/updatePass', '\App\Controllers\Manage\ManagementController@updatePass');
+$router->post('/createStaff', '\App\Controllers\Manage\ManagementController@createStaff');
+$router->post('/deleteUser', '\App\Controllers\Manage\ManagementController@deleteUser');
+$router->post('/updateStaff', '\App\Controllers\Manage\ManagementController@updateStaff');
 
 $router->setBasePath('/bookstore/public');
 $router->run();

@@ -15,6 +15,8 @@ class DashboardController extends Controller
      */
     public function index()
     {
+        $this->requirePermission('dashboard.view');
+
         // Nhận tham số lọc từ Request (GET), ví dụ: 'today', 'month', 'quarter', 'year'
         // Mặc định là 'month' (tháng này)
         $filterType = isset($_GET['filter_type']) ? $_GET['filter_type'] : 'month';

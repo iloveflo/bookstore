@@ -1,3 +1,7 @@
+<?php
+use App\SessionGuard as Guard;
+$currentUser = Guard::user();
+?>
 <!doctype html>
 <html lang="en">
 
@@ -12,13 +16,80 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha2/dist/css/bootstrap.min.css">
 
     <style>
-        .bd-placeholder-img { font-size: 1.125rem; text-anchor: middle; -webkit-user-select: none; -moz-user-select: none; user-select: none; }
-        @media (min-width: 768px) { .bd-placeholder-img-lg { font-size: 3.5rem; } }
-        .b-example-divider { height: 3rem; background-color: rgba(0, 0, 0, .1); border: solid rgba(0, 0, 0, .15); border-width: 1px 0; box-shadow: inset 0 .5em 1.5em rgba(0, 0, 0, .1), inset 0 .125em .5em rgba(0, 0, 0, .15); }
-        .b-example-vr { flex-shrink: 0; width: 1.5rem; height: 100vh; }
-        .bi { vertical-align: -.125em; fill: currentColor; }
-        .nav-scroller { position: relative; z-index: 2; height: 2.75rem; overflow-y: hidden; }
-        .nav-scroller .nav { display: flex; flex-wrap: nowrap; padding-bottom: 1rem; margin-top: -1px; overflow-x: auto; text-align: center; white-space: nowrap; -webkit-overflow-scrolling: touch; }
+        .bd-placeholder-img {
+            font-size: 1.125rem;
+            text-anchor: middle;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            user-select: none;
+        }
+
+        @media (min-width: 768px) {
+            .bd-placeholder-img-lg {
+                font-size: 3.5rem;
+            }
+        }
+
+        /* Premium Header Styling */
+        .admin-header {
+            background-color: #1a1d20 !important;
+            border-bottom: 1px solid #343a40;
+        }
+        
+        .user-profile-box {
+            display: flex;
+            align-items: center;
+            padding: 5px 20px;
+            border-left: 1px solid #343a40;
+            margin-right: 10px;
+        }
+
+        .user-info-text {
+            display: flex;
+            flex-direction: column;
+            margin-left: 12px;
+            line-height: 1.2;
+        }
+
+        .user-name {
+            color: #fff;
+            font-weight: 600;
+            font-size: 1.05rem;
+        }
+
+        .user-role {
+            font-size: 0.75rem;
+            color: #0dcaf0;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 700;
+        }
+
+        .btn-logout {
+            background: rgba(220, 53, 69, 0.1);
+            color: #ff6b6b !important;
+            border: 1px solid rgba(220, 53, 69, 0.2);
+            border-radius: 6px;
+            padding: 6px 15px !important;
+            font-size: 0.85rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            margin-right: 15px;
+        }
+
+        .btn-logout:hover {
+            background: #dc3545;
+            color: #fff !important;
+        }
+
+        .user-avatar {
+            display: flex;
+            align-items: center;
+        }
+
+        .navbar-brand h5 {
+            letter-spacing: 1px;
+        }
     </style>
 
     <link href="/css/dashboard.css" rel="stylesheet">
@@ -27,20 +98,32 @@
 
 <body>
 
-    <header class="navbar navbar-dark sticky-top bg-dark flex-md-nowrap p-0 shadow">
+    <header class="navbar navbar-dark sticky-top admin-header flex-md-nowrap p-0 shadow-sm">
         <a href="home" class="navbar-brand col-md-3 col-lg-2 me-0 px-3 fs-6 ">
             <h5 class="m-0 display-4 fs-5 text-secondary fw-bold"><span class="text-primary fs-5 fw-bold">BOOK</span>worm</h5>
         </a>
         <button class="navbar-toggler position-absolute d-md-none collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu">
             <span class="navbar-toggler-icon"></span>
         </button>
-        <div class="w-100 boder-bottom p-1">
-            <h3 class="fs-4 px-2 text-white text-center text-uppercase pt-2">Quản lý bài viết</h3>
-        </div>
-        <div class="navbar-nav">
-            <div class="nav-item text-nowrap">
-                <a class="nav-link px-3" href="logout" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">Đăng xuất</a>
-                <form id="logout-form" action="logout" method="POST" style="display: none;"></form>
+        
+        <div class="d-flex align-items-center ms-auto">
+            <div class="user-profile-box d-none d-md-flex">
+                <div class="user-avatar">
+                    <i class="fas fa-user-circle fa-2x text-secondary"></i>
+                </div>
+                <div class="user-info-text">
+                    <span class="user-name"><?= $this->e($currentUser->name) ?></span>
+                    <span class="user-role"><?= $this->e($currentUser->getRoleLabel()) ?></span>
+                </div>
+            </div>
+            
+            <div class="navbar-nav">
+                <div class="nav-item text-nowrap">
+                    <a class="nav-link btn-logout px-3" href="logout" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
+                        <i class="fas fa-sign-out-alt me-1"></i> Đăng xuất
+                    </a>
+                    <form id="logout-form" action="logout" method="POST" style="display: none;"></form>
+                </div>
             </div>
         </div>
     </header>
@@ -53,24 +136,49 @@
                         <li class="nav-item">
                             <a class="nav-link" href="/bookstore/public/home"><i class="fas fa-home"></i> Trang Chủ</a>
                         </li>
+                        <?php if ($currentUser->can('product.view')): ?>
                         <li class="nav-item">
-                            <a class="nav-link" href="/bookstore/public/manageProduct"><i class="fa fa-book"></i> Sản Phẩm</a>
+                            <a class="nav-link" href="/bookstore/public/manageProduct">
+                                <i class="fa fa-book"></i>
+                                Sản Phẩm
+                            </a>
                         </li>
+                        <?php endif; ?>
+
+                        <?php if ($currentUser->can('bill.view')): ?>
                         <li class="nav-item">
-                            <a class="nav-link" href="/bookstore/public/manageBill"><i class="fa fa-shopping-cart"></i> Đơn Hàng</a>
+                            <a class="nav-link" href="/bookstore/public/manageBill">
+                                <i class="fa fa-shopping-cart"></i>
+                                Đơn Hàng
+                            </a>
                         </li>
+                        <?php endif; ?>
+
+                        <?php if ($currentUser->can('user.view_all') || $currentUser->can('user.view_customers')): ?>
                         <li class="nav-item">
-                            <a class="nav-link" href="/bookstore/public/users"><i class="fas fa-user-friends"></i> Người Dùng</a>
+                            <a class="nav-link" href="/bookstore/public/users">
+                                <i class="fas fa-user-friends"></i>
+                                Người Dùng
+                            </a>
                         </li>
+                        <?php endif; ?>
+
+                        <?php if ($currentUser->can('article.view')): ?>
                         <li class="nav-item">
-                            <a class="nav-link active" href="/bookstore/public/manageArticles"><i class="fas fa-newspaper"></i> Bài Viết</a>
+                            <a class="nav-link active" href="/bookstore/public/manageArticles">
+                                <i class="fas fa-newspaper"></i> Bài Viết
+                            </a>
                         </li>
+                        <?php endif; ?>
+
+                        <?php if ($currentUser->can('dashboard.view')): ?>
                         <li class="nav-item">
                             <a class="nav-link" href="/bookstore/public/dashboard">
                                 <i class="fas fa-chart-line"></i>
                                 Dashboard
                             </a>
                         </li>
+                        <?php endif; ?>
                     </ul>
                 </div>
             </nav>

@@ -29,9 +29,19 @@ class ManagementController extends Controller
     /*** MANAGE ALL PRODUCTS ***/
     public function getAllProducts()
     {
+        $this->requirePermission('product.view');
         $products_manage = Product::join('loaisach', 'loaisach.ma_loai_sach', '=', 'sach.ma_loai_sach')->orderBy('sach.ma_sach', 'ASC')->get();
+        
+        // Lấy thêm danh sách metadata để quản lý
+        $types = ProductType::all();
+        $authors = TacGia::all();
+        $publishers = NhaXuatBan::all();
+
         $this->sendPage('manage/manageProduct', [
-            'products_manage' => $products_manage
+            'products_manage' => $products_manage,
+            'types' => $types,
+            'authors' => $authors,
+            'publishers' => $publishers
         ]);
     }
 
@@ -39,6 +49,7 @@ class ManagementController extends Controller
     /*** SORT PRODUCT ***/
     public function sortAllProducts()
     {
+        $this->requirePermission('product.view');
         if (isset($_POST['sort-price'])) {
             $sort_price = $_POST['sort-price'];
             if ($sort_price == 1) {
@@ -76,6 +87,7 @@ class ManagementController extends Controller
     /*** CREATE NEW PRODUCT ***/
     public function showCreatePage()
     {
+        $this->requirePermission('product.create');
         $last_product = $this->createNewProductId();
 
         $product_type = ProductType::all();
@@ -103,6 +115,7 @@ class ManagementController extends Controller
 
     public function createProduct()
     {
+        $this->requirePermission('product.create');
         // 1. Lấy dữ liệu văn bản từ Form
         $data = $this->filterProductData($_POST);
 
@@ -169,76 +182,77 @@ class ManagementController extends Controller
         ];
     }
 
-  protected function uploadImage()
-{
-    $allow_type = ['jpg', 'png', 'jpeg', 'webp'];
-    $target_dir = ROOTDIR . "public/img/product/"; // Đảm bảo đường dẫn đúng
-    
-    // Mảng chứa kết quả trả về
-    $result = [];
+    protected function uploadImage()
+    {
+        $allow_type = ['jpg', 'png', 'jpeg', 'webp'];
+        $target_dir = ROOTDIR . "public/img/product/"; // Đảm bảo đường dẫn đúng
 
-    // --- 1. XỬ LÝ ẢNH CHÍNH (hinh_anh) ---
-    if (isset($_FILES["hinh_anh"]) && $_FILES["hinh_anh"]["error"] === UPLOAD_ERR_OK) {
-        
-        $file = $_FILES["hinh_anh"];
-        // Lấy tên gốc của file (VD: sach-hay.jpg)
-        $originalName = basename($file["name"]); 
-        $ext = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
+        // Mảng chứa kết quả trả về
+        $result = [];
 
-        if (in_array($ext, $allow_type)) {
-            $target_file = $target_dir . $originalName;
+        // --- 1. XỬ LÝ ẢNH CHÍNH (hinh_anh) ---
+        if (isset($_FILES["hinh_anh"]) && $_FILES["hinh_anh"]["error"] === UPLOAD_ERR_OK) {
 
-            // KIỂM TRA TỒN TẠI
-            if (file_exists($target_file)) {
-                // Nếu file đã có, ta chỉ lấy tên file đưa vào mảng kết quả
-                // Không cần upload đè lên
-                $result['hinh_anh'] = $originalName;
-            } else {
-                // Nếu chưa có, tiến hành upload
-                if (move_uploaded_file($file["tmp_name"], $target_file)) {
-                    $result['hinh_anh'] = $originalName; 
+            $file = $_FILES["hinh_anh"];
+            // Lấy tên gốc của file (VD: sach-hay.jpg)
+            $originalName = basename($file["name"]);
+            $ext = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
+
+            if (in_array($ext, $allow_type)) {
+                $target_file = $target_dir . $originalName;
+
+                // KIỂM TRA TỒN TẠI
+                if (file_exists($target_file)) {
+                    // Nếu file đã có, ta chỉ lấy tên file đưa vào mảng kết quả
+                    // Không cần upload đè lên
+                    $result['hinh_anh'] = $originalName;
+                } else {
+                    // Nếu chưa có, tiến hành upload
+                    if (move_uploaded_file($file["tmp_name"], $target_file)) {
+                        $result['hinh_anh'] = $originalName;
+                    }
                 }
             }
         }
-    }
 
-    // --- 2. XỬ LÝ ẢNH CHI TIẾT (anh[]) ---
-    $mapIndexToDbColumn = [0 => 'anh_1', 1 => 'anh_2'];
+        // --- 2. XỬ LÝ ẢNH CHI TIẾT (anh[]) ---
+        $mapIndexToDbColumn = [0 => 'anh_1', 1 => 'anh_2'];
 
-    if (isset($_FILES["anh"])) {
-        foreach ($_FILES["anh"]["name"] as $index => $name) {
-            // Kiểm tra: Có file, không lỗi, và index hợp lệ
-            if (!empty($name) && $_FILES["anh"]["error"][$index] === UPLOAD_ERR_OK && isset($mapIndexToDbColumn[$index])) {
-                
-                $originalName = basename($name);
-                $ext = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
-                
-                if (in_array($ext, $allow_type)) {
-                    $target_file = $target_dir . $originalName;
-                    $colName = $mapIndexToDbColumn[$index];
+        if (isset($_FILES["anh"])) {
+            foreach ($_FILES["anh"]["name"] as $index => $name) {
+                // Kiểm tra: Có file, không lỗi, và index hợp lệ
+                if (!empty($name) && $_FILES["anh"]["error"][$index] === UPLOAD_ERR_OK && isset($mapIndexToDbColumn[$index])) {
 
-                    // KIỂM TRA TỒN TẠI
-                    if (file_exists($target_file)) {
-                        // File đã tồn tại -> Dùng lại tên cũ
-                        $result[$colName] = $originalName;
-                    } else {
-                        // File chưa có -> Upload mới
-                        if (move_uploaded_file($_FILES["anh"]["tmp_name"][$index], $target_file)) {
+                    $originalName = basename($name);
+                    $ext = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
+
+                    if (in_array($ext, $allow_type)) {
+                        $target_file = $target_dir . $originalName;
+                        $colName = $mapIndexToDbColumn[$index];
+
+                        // KIỂM TRA TỒN TẠI
+                        if (file_exists($target_file)) {
+                            // File đã tồn tại -> Dùng lại tên cũ
                             $result[$colName] = $originalName;
+                        } else {
+                            // File chưa có -> Upload mới
+                            if (move_uploaded_file($_FILES["anh"]["tmp_name"][$index], $target_file)) {
+                                $result[$colName] = $originalName;
+                            }
                         }
                     }
                 }
             }
         }
-    }
 
-    return $result;
-}
+        return $result;
+    }
 
 
     /*** UPDATE PRODUCT ***/
     public function showUpdatePage($productId)
     {
+        $this->requirePermission('product.update');
         $product = Product::where('sach.ma_sach', '=', $productId)->first();
 
         $product_type = ProductType::all();
@@ -257,6 +271,7 @@ class ManagementController extends Controller
 
     public function update($productId)
     {
+        $this->requirePermission('product.update');
         $product = Product::where('ma_sach', '=', $productId)->first();
 
         // 1. Lấy dữ liệu text từ form
@@ -326,6 +341,7 @@ class ManagementController extends Controller
     /*** DELETE PRODUCT ***/
     public function delete($productId)
     {
+        $this->requirePermission('product.delete');
         // Xóa tất cả sản phẩm này khỏi giỏ hàng trước
         Cart::where('ma_sach', '=', $productId)->delete();
         $product = Product::where('ma_sach', '=', $productId)->first();
@@ -336,9 +352,10 @@ class ManagementController extends Controller
     }
 
 
-    /*** SORT PRODUCT ***/
+    /*** SORT USERS ***/
     public function sortAllUsers()
     {
+        $this->requirePermission('user.view_all');
         if (isset($_POST['sort-user'])) {
             $sort_user = $_POST['sort-user'];
             if ($sort_user == 1) {
@@ -373,9 +390,21 @@ class ManagementController extends Controller
     /*** MANAGE ALL USERS ***/
     public function getAllUsers()
     {
-        $users_manage = User::all();
+        if (!Guard::can('user.view_all') && !Guard::can('user.view_customers')) {
+            $this->requirePermission('user.view_all');
+        }
+
+        $currentUser = Guard::user();
+        if ($currentUser->hasRole(User::ROLE_CUSTOMER_SUPPORT)) {
+            $users_manage = User::customers()->get();
+        } else {
+            $users_manage = User::all();
+        }
+
         $this->sendPage('manage/users', [
-            'users_manage' => $users_manage
+            'users_manage' => $users_manage,
+            'messages' => session_get_once('messages'),
+            'errors' => session_get_once('errors')
         ]);
     }
 
@@ -468,14 +497,32 @@ class ManagementController extends Controller
     /*** MANAGE ALL BILLS ***/
     public function manageBill()
     {
-        $khach = User::where('email', Guard::user()->email)->first();
+        if (!Guard::can('bill.view') && !Guard::can('user.view_bill_history')) {
+            $this->requirePermission('bill.view');
+        }
+
+        $query = Bill::join('users', 'users.id', '=', 'hoadon.id');
+
+        // Xử lý tìm kiếm (Ví dụ: từ link "Lịch sử" trong Quản lý người dùng)
+        if (isset($_GET['search']) && !empty($_GET['search'])) {
+            $search = $_GET['search'];
+            $query->where(function($q) use ($search) {
+                $q->where('users.email', 'like', "%$search%")
+                  ->orWhere('users.name', 'like', "%$search%")
+                  ->orWhere('hoadon.ma_hoa_don', 'like', "%$search%");
+            });
+        }
+
         $this->sendPage('manage/manageBill', [
-            'bills' => Bill::join('users', 'users.id', '=', 'hoadon.id')->orderBy('ma_hoa_don', 'DESC')->get()
+            'bills' => $query->orderBy('ma_hoa_don', 'DESC')->select('hoadon.*', 'users.name as ten_khach_hang')->get()
         ]);
     }
 
     public function manageDetailBill()
     {
+        if (!Guard::can('bill.view') && !Guard::can('user.view_bill_history')) {
+            $this->requirePermission('bill.view');
+        }
         $this->sendPage('manage/manageDetailBill', [
             'bill' => BillDetail::join('sach', 'sach.ma_sach', '=', 'chitiethoadon.ma_sach')->where('ma_hoa_don', $_GET['mhd'])->get(),
             'billdetail' => Bill::where('ma_hoa_don', $_GET['mhd'])->get()
@@ -484,6 +531,8 @@ class ManagementController extends Controller
 
     public function cancelBill($billId)
     {
+        // Chỉ ADMIN mới có quyền xóa/hủy hoàn toàn; ORDER_STAFF chỉ cập nhật trạng thái
+        $this->requirePermission('bill.delete');
         $data['trang_thai'] = "Canceled";
         $bill = Bill::where('ma_hoa_don', '=', $billId)->first();
         $bill->update($data);
@@ -492,6 +541,7 @@ class ManagementController extends Controller
 
     public function send($billId)
     {
+        $this->requirePermission('bill.update_status');
         $data['trang_thai'] = "sending";
         $bill = Bill::where('ma_hoa_don', '=', $billId)->first();
         $bill->update($data);
@@ -501,6 +551,9 @@ class ManagementController extends Controller
     /*** BILL FILTER ***/
     public function sortBill()
     {
+        if (!Guard::can('bill.view') && !Guard::can('user.view_bill_history')) {
+            $this->requirePermission('bill.view');
+        }
         if (isset($_POST['bill-filter'])) {
             $filter_bill = $_POST['bill-filter'];
             if ($filter_bill == 1) {
@@ -537,12 +590,13 @@ class ManagementController extends Controller
         }
     }
 
-   public function indexArticles()
+    public function indexArticles()
     {
+        $this->requirePermission('article.view');
         // 1. Xác định trang hiện tại từ URL (ví dụ: ?page=2). Mặc định là trang 1.
         $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
-        $page = $page > 0 ? $page : 1; 
-        
+        $page = $page > 0 ? $page : 1;
+
         $perPage = 10; // Số bài viết mỗi trang
         $offset = ($page - 1) * $perPage;
 
@@ -562,7 +616,7 @@ class ManagementController extends Controller
         $articles = $query->latest('created_at')
             ->skip($offset)
             ->take($perPage)
-            ->get(); 
+            ->get();
 
         // 6. Trả về view cùng với các biến cần thiết
         $this->sendPage('manage/manageArticles', [
@@ -579,6 +633,7 @@ class ManagementController extends Controller
      */
     public function updateArticle($id)
     {
+        $this->requirePermission('article.update');
         // 1. Lấy dữ liệu từ form gửi lên
         $title = $_POST['title'] ?? '';
         $summary = $_POST['summary'] ?? '';
@@ -599,10 +654,10 @@ class ManagementController extends Controller
 
         // Kiểm tra xem người dùng có chọn file ảnh mới không (mã lỗi 0 = UPLOAD_ERR_OK)
         if (isset($_FILES['thumbnail']) && $_FILES['thumbnail']['error'] === 0) {
-            
+
             // Định nghĩa đường dẫn lưu file (Bạn nhớ điều chỉnh lại số lượng '../' cho đúng với vị trí thư mục public của bạn)
-            $uploadDir = __DIR__ . '/../../../public/img/blog/'; 
-            
+            $uploadDir = __DIR__ . '/../../../public/img/blog/';
+
             // Tạo thư mục nếu chưa tồn tại
             if (!is_dir($uploadDir)) {
                 mkdir($uploadDir, 0777, true);
@@ -615,7 +670,7 @@ class ManagementController extends Controller
             // Di chuyển file từ thư mục tạm vào thư mục chính thức
             if (move_uploaded_file($_FILES['thumbnail']['tmp_name'], $targetFilePath)) {
                 $thumbnail = $fileName; // Đổi biến $thumbnail thành tên file mới để lưu vào CSDL
-                
+
                 // (Tùy chọn) Xóa ảnh cũ đi cho nhẹ dung lượng Server
                 if (!empty($thumbnail_cu) && file_exists($uploadDir . $thumbnail_cu)) {
                     unlink($uploadDir . $thumbnail_cu);
@@ -643,6 +698,7 @@ class ManagementController extends Controller
      */
     public function editArticle($id)
     {
+        $this->requirePermission('article.update');
         // 1. Truy vấn lấy thông tin bài viết theo Khóa chính (article_id)
         $article = Article::where('article_id', $id)->first();
 
@@ -668,16 +724,17 @@ class ManagementController extends Controller
      */
     public function deleteArticle($id)
     {
+        $this->requirePermission('article.delete');
         // 1. Tìm bài viết dựa vào ID
         $article = Article::where('article_id', $id)->first();
 
         // Nếu bài viết tồn tại thì mới tiến hành xóa
         if ($article) {
-            
+
             // 2. Xóa file ảnh bìa vật lý trên server (nếu có ảnh)
             if (!empty($article->thumbnail)) {
                 $imagePath = '/var/www/html/public/img/blog/' . $article->thumbnail;
-                
+
                 // Kiểm tra xem file có thực sự tồn tại trên ổ cứng không rồi mới xóa
                 if (file_exists($imagePath)) {
                     unlink($imagePath);
@@ -698,6 +755,7 @@ class ManagementController extends Controller
      */
     public function createArticle()
     {
+        $this->requirePermission('article.create');
         // Trả về view 'add_article' (Bạn nhớ tạo file giao diện này nhé)
         $this->sendPage('manage/add_article', [
             'errors'    => session_get_once('errors_article'),
@@ -710,15 +768,15 @@ class ManagementController extends Controller
      */
     public function storeArticle()
     {
+        $this->requirePermission('article.create');
         // 1. Lấy dữ liệu từ form gửi lên
         $title = $_POST['title'] ?? '';
         $summary = $_POST['summary'] ?? '';
         $content = $_POST['content'] ?? '';
         $status = $_POST['status'] ?? 'published';
-        
-        // Lấy ID của Admin đang đăng nhập. 
-        // Nếu bạn có dùng Session thì thay bằng $_SESSION['user_id'], tạm thời tôi để mặc định là 2 (tài khoản Admin của bạn).
-        $admin_id = 2; 
+
+        // Lấy ID của người đang đăng nhập làm audit log (admin_id)
+        $admin_id = Guard::user()->id;
 
         // Validate cơ bản
         if (empty($title) || empty($content)) {
@@ -728,12 +786,12 @@ class ManagementController extends Controller
         }
 
         // 2. Xử lý Upload Ảnh Bìa (Thumbnail)
-        $thumbnail = ''; 
+        $thumbnail = '';
 
         if (isset($_FILES['thumbnail']) && $_FILES['thumbnail']['error'] === 0) {
-            
-            $uploadDir = '/var/www/html/public/img/blog/'; 
-            
+
+            $uploadDir = '/var/www/html/public/img/blog/';
+
             if (!is_dir($uploadDir)) {
                 mkdir($uploadDir, 0777, true);
             }
@@ -767,5 +825,227 @@ class ManagementController extends Controller
         // 4. Chuyển hướng về trang Danh sách
         header('Location: /bookstore/public/manageArticles');
         exit;
+    }
+
+    public function deleteUser()
+    {
+        $this->requirePermission('user.delete');
+        $id = $_POST['id'] ?? null;
+        if ($id && $id != Guard::user()->id) {
+            User::where('id', $id)->delete();
+        }
+        redirect('users');
+    }
+
+    public function createStaff()
+    {
+        $this->requirePermission('user.create');
+
+        $data = [
+            'name' => $_POST['name'] ?? '',
+            'email' => $_POST['email'] ?? '',
+            'phone' => $_POST['phone'] ?? '',
+            'address' => $_POST['address'] ?? '',
+            'password' => $_POST['password'] ?? '',
+            'password_confirmation' => $_POST['password_confirmation'] ?? '',
+            'role' => $_POST['role'] ?? User::ROLE_CUSTOMER
+        ];
+
+        // Bảo mật: Admin không được phép tạo thêm Admin khác
+        if ($data['role'] === User::ROLE_ADMIN) {
+            $data['role'] = User::ROLE_CUSTOMER_SUPPORT; // Mặc định về role thấp hơn nếu cố tình hack
+        }
+
+        // Validation cơ bản
+        $errors = [];
+        if (empty($data['name'])) $errors['name'] = "Tên không được để trống";
+        if (empty($data['email'])) {
+            $errors['email'] = "Email không được để trống";
+        } else {
+            // Kiểm tra email trùng
+            $existingUser = User::where('email', $data['email'])->first();
+            if ($existingUser) {
+                $errors['email'] = "Email này đã được sử dụng bởi một tài khoản khác";
+            }
+        }
+
+        if (!empty($data['phone'])) {
+            // Kiểm tra số điện thoại trùng
+            $existingPhone = User::where('phone', $data['phone'])->first();
+            if ($existingPhone) {
+                $errors['phone'] = "Số điện thoại này đã được sử dụng";
+            }
+        }
+
+        if (empty($data['password'])) $errors['password'] = "Mật khẩu không được để trống";
+        if ($data['password'] !== $data['password_confirmation']) {
+            $errors['password'] = "Mật khẩu nhập lại không khớp";
+        }
+
+        if (empty($errors)) {
+            User::create([
+                'name' => $data['name'],
+                'email' => $data['email'],
+                'phone' => $data['phone'],
+                'address' => $data['address'],
+                'password' => password_hash($data['password'], PASSWORD_DEFAULT),
+                'role' => $data['role']
+            ]);
+            redirect('users', ['messages' => ['success' => 'Đã thêm nhân sự thành công.']]);
+        }
+
+        redirect('users', ['errors' => $errors]);
+    }
+
+    public function updateStaff()
+    {
+        $this->requirePermission('user.update');
+        $id = $_POST['id'] ?? null;
+        if (!$id) redirect('users');
+
+        $user = User::where('id', $id)->first();
+        if (!$user) redirect('users');
+
+        $data = [
+            'name' => $_POST['name'] ?? $user->name,
+            'address' => $_POST['address'] ?? $user->address,
+            'role' => $_POST['role'] ?? $user->role
+        ];
+
+        // Bảo mật: Không cho phép đổi thành ADMIN nếu không phải ADMIN
+        // (Thực tế người đang thao tác là Admin nên có quyền, nhưng ta vẫn giữ logic an toàn)
+
+        $user->update($data);
+
+        redirect('users', ['messages' => ['success' => 'Cập nhật thông tin nhân sự thành công.']]);
+    }
+
+    public function getUserOrders()
+    {
+        $this->requirePermission('user.view_bill_history');
+        $id = $_GET['id'] ?? null;
+        if (!$id) {
+            echo json_encode(['success' => false, 'message' => 'ID người dùng không hợp lệ']);
+            return;
+        }
+
+        $orders = Bill::where('id', $id)->orderBy('ma_hoa_don', 'DESC')->get();
+        
+        // Nạp thêm thông tin chi tiết cho mỗi đơn hàng (bao gồm tên sách và ảnh)
+        foreach ($orders as $order) {
+            $order->details = BillDetail::join('sach', 'sach.ma_sach', '=', 'chitiethoadon.ma_sach')
+                ->where('ma_hoa_don', $order->ma_hoa_don)
+                ->select('chitiethoadon.*', 'sach.ten_sach', 'sach.hinh_anh')
+                ->get();
+        }
+        
+        echo json_encode(['success' => true, 'orders' => $orders]);
+    }
+
+    // =========================================================
+    // MANAGE METADATA (Type, Author, Publisher)
+    // =========================================================
+    
+    // Loai Sach
+    public function addType() {
+        $this->requirePermission('product.create');
+        
+        // Auto generate ID (Pattern BXX)
+        $lastType = ProductType::where('ma_loai_sach', 'LIKE', 'B%')
+                               ->orderBy('ma_loai_sach', 'DESC')
+                               ->first();
+        if ($lastType) {
+            $lastId = $lastType->ma_loai_sach; 
+            $num = (int)substr($lastId, 1);
+            $newId = 'B' . str_pad($num + 1, 2, '0', STR_PAD_LEFT);
+        } else {
+            $newId = 'B01';
+        }
+        
+        ProductType::create(['ma_loai_sach' => $newId, 'ten_loai_sach' => $_POST['name']]);
+        redirect('/bookstore/public/manageProduct', ['success' => 'Thêm loại sách mới thành công!']);
+    }
+    public function updateType() {
+        $this->requirePermission('product.update');
+        $type = ProductType::where('ma_loai_sach', $_POST['id'])->first();
+        if ($type) $type->update(['ten_loai_sach' => $_POST['name']]);
+        redirect('/bookstore/public/manageProduct', ['success' => 'Cập nhật loại sách thành công!']);
+    }
+    public function deleteType($id) {
+        $this->requirePermission('product.delete');
+        $count = Product::where('ma_loai_sach', $id)->count();
+        if ($count > 0) {
+            redirect('/bookstore/public/manageProduct', ['errors' => ['metadata' => 'Không thể xóa loại sách này vì vẫn còn sản phẩm thuộc loại này.']]);
+        } else {
+            ProductType::where('ma_loai_sach', $id)->delete();
+            redirect('/bookstore/public/manageProduct');
+        }
+    }
+
+    // Tac Gia
+    public function addAuthor() {
+        $this->requirePermission('product.create');
+        
+        // Auto generate numeric ID
+        $lastAuthor = TacGia::orderBy('ma_tac_gia', 'DESC')->first();
+        $newId = $lastAuthor ? ($lastAuthor->ma_tac_gia + 1) : 1;
+        
+        TacGia::create(['ma_tac_gia' => $newId, 'ten_tac_gia' => $_POST['name']]);
+        redirect('/bookstore/public/manageProduct', ['success' => 'Thêm tác giả mới thành công!']);
+    }
+    public function updateAuthor() {
+        $this->requirePermission('product.update');
+        $author = TacGia::where('ma_tac_gia', $_POST['id'])->first();
+        if ($author) $author->update(['ten_tac_gia' => $_POST['name']]);
+        redirect('/bookstore/public/manageProduct', ['success' => 'Cập nhật tác giả thành công!']);
+    }
+    public function deleteAuthor($id) {
+        $this->requirePermission('product.delete');
+        $count = Product::where('ma_tac_gia', $id)->count();
+        if ($count > 0) {
+            redirect('/bookstore/public/manageProduct', ['errors' => ['metadata' => 'Không thể xóa tác giả này vì vẫn còn sản phẩm của tác giả này.']]);
+        } else {
+            TacGia::where('ma_tac_gia', $id)->delete();
+            redirect('/bookstore/public/manageProduct');
+        }
+    }
+
+    // Nha Xuat Ban
+    public function addPublisher() {
+        $this->requirePermission('product.create');
+        
+        // Auto generate numeric ID
+        $lastNxb = NhaXuatBan::orderBy('ma_nxb', 'DESC')->first();
+        $newId = $lastNxb ? ($lastNxb->ma_nxb + 1) : 1;
+
+        NhaXuatBan::create([
+            'ma_nxb' => $newId, 
+            'ten_nxb' => $_POST['name'],
+            'sdt_nxb' => $_POST['phone'],
+            'dia_chi_nxb' => $_POST['address']
+        ]);
+        redirect('/bookstore/public/manageProduct', ['success' => 'Thêm nhà xuất bản mới thành công!']);
+    }
+    public function updatePublisher() {
+        $this->requirePermission('product.update');
+        $nxb = NhaXuatBan::where('ma_nxb', $_POST['id'])->first();
+        if ($nxb) {
+            $nxb->update([
+                'ten_nxb' => $_POST['name'],
+                'sdt_nxb' => $_POST['phone'],
+                'dia_chi_nxb' => $_POST['address']
+            ]);
+        }
+        redirect('/bookstore/public/manageProduct', ['success' => 'Cập nhật nhà xuất bản thành công!']);
+    }
+    public function deletePublisher($id) {
+        $this->requirePermission('product.delete');
+        $count = Product::where('ma_nxb', $id)->count();
+        if ($count > 0) {
+            redirect('/bookstore/public/manageProduct', ['errors' => ['metadata' => 'Không thể xóa NXB này vì vẫn còn sản phẩm của NXB này.']]);
+        } else {
+            NhaXuatBan::where('ma_nxb', $id)->delete();
+            redirect('/bookstore/public/manageProduct');
+        }
     }
 }

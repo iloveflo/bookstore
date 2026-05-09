@@ -27,7 +27,7 @@ class SessionGuard
 
         return true;
     }
-    
+
     public static function user()
     {
         if (!static::$user && static::isUserLoggedIn()) {
@@ -48,8 +48,48 @@ class SessionGuard
         return isset($_SESSION['user_id']);
     }
 
-    public static function isAdminLoggedIn()
+    /**
+     * Kiểm tra người đang đăng nhập có phải ADMIN không.
+     * Thay thế cách check email cũ bằng cột role.
+     */
+    public static function isAdminLoggedIn(): bool
     {
-        return isset($_SESSION['user_id']) && (static::user()->email == "admin@gmail.com");
+        return static::isUserLoggedIn() && static::user()?->isAdmin();
+    }
+
+    /**
+     * Kiểm tra người đang đăng nhập có phải staff (nhân viên) không.
+     * Staff = bất kỳ role nào không phải CUSTOMER.
+     */
+    public static function isStaffLoggedIn(): bool
+    {
+        if (!static::isUserLoggedIn()) return false;
+        $user = static::user();
+        return $user && $user->role !== User::ROLE_CUSTOMER;
+    }
+
+    /**
+     * Kiểm tra người đang đăng nhập có role được chỉ định không.
+     * Hỗ trợ truyền một role hoặc mảng role.
+     *
+     * @param string|string[] $role
+     */
+    public static function hasRole($role): bool
+    {
+        if (!static::isUserLoggedIn()) return false;
+        $user = static::user();
+        return $user && $user->hasRole($role);
+    }
+
+    /**
+     * Kiểm tra người đang đăng nhập có quyền (permission) không.
+     * Ủy thác toàn bộ logic xuống User::can().
+     */
+    public static function can(string $permission): bool
+    {
+        if (!static::isUserLoggedIn()) return false;
+        $user = static::user();
+        return $user && $user->can($permission);
     }
 }
+

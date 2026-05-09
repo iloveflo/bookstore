@@ -51,4 +51,20 @@ class Controller
 	{
 		return session_get_once('update-form', []);
 	}
+
+	/**
+	 * Yêu cầu người dùng phải có permission cụ thể.
+	 * Nếu không: trả về HTTP 403 và render trang lỗi.
+	 */
+	protected function requirePermission(string $permission): void
+	{
+		if (!\App\SessionGuard::can($permission)) {
+			http_response_code(403);
+			$this->sendPage('errors/403', [
+				'message' => 'Bạn không có quyền thực hiện thao tác này.',
+				'required_permission' => $permission,
+			]);
+			exit;
+		}
+	}
 }
