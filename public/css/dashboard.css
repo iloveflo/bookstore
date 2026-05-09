@@ -19,14 +19,14 @@ body {
   z-index: 100;
   padding: 80px 0 0; 
   box-shadow: inset -1px 0 0 rgba(0, 0, 0, .1);
-  background-color: #f8f9fa !important; /* Màu nền xám nhẹ nhàng hơn */
-  width: 240px;
+  background-color: #f8f9fa !important;
+  width: 260px; /* Tăng độ rộng để khớp với phía trên */
 }
 
 @media (min-width: 768px) {
   #sidebarMenu {
-    width: 240px !important;
-    max-width: 240px !important;
+    width: 260px !important;
+    max-width: 260px !important;
   }
 }
 
@@ -102,8 +102,11 @@ body {
 .navbar-brand {
   padding-top: .75rem;
   padding-bottom: .75rem;
-  background-color: rgba(0, 0, 0, .25);
-  box-shadow: inset -1px 0 0 rgba(0, 0, 0, .25);
+  background-color: #1a1d20 !important; /* Đồng bộ với admin-header */
+  width: 260px !important; /* Cố định độ rộng để khớp sidebar bên dưới */
+  margin-right: 0 !important;
+  text-align: center;
+  border-right: 1px solid #343a40;
 }
 
 .navbar .navbar-toggler {
