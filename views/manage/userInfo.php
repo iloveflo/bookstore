@@ -24,8 +24,8 @@
 
                 <!-- Email -->
                 <div class="form-group mb-3<?= isset($errors['email']) ? ' has-error' : '' ?>">
-                    <label class="fw-bold" for="email">Email</label>
-                    <input type="text" name="email" class="form-control border border-1 border-secondary" maxlen="255" id="email" placeholder="Nhập địa chỉ email" value="<?= isset($old_value['email']) ? $this->e($old_value['email']) : $this->e($user->email) ?>" style="background-color: #F3F6FF;" />
+                    <label class="fw-bold" for="email">Email (Không thể sửa)</label>
+                    <input type="text" name="email" class="form-control border border-1 border-secondary" maxlen="255" id="email" value="<?= isset($old_value['email']) ? $this->e($old_value['email']) : $this->e($user->email) ?>" style="background-color: #e9ecef; cursor: not-allowed;" readonly disabled />
 
                     <?php if (isset($errors['email'])) : ?>
                         <span class="help-block text-danger">

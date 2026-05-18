@@ -395,10 +395,10 @@ class ManagementController extends Controller
         }
 
         $currentUser = Guard::user();
-        if ($currentUser->hasRole(User::ROLE_CUSTOMER_SUPPORT)) {
-            $users_manage = User::customers()->get();
-        } else {
+        if ($currentUser->can('user.view_all')) {
             $users_manage = User::all();
+        } else {
+            $users_manage = User::customers()->get();
         }
 
         $this->sendPage('manage/users', [
@@ -413,7 +413,7 @@ class ManagementController extends Controller
     {
         return [
             'name' => $data['name'] ?? null,
-            'email' => filter_var($data['email'], FILTER_VALIDATE_EMAIL),
+            'email' => isset($data['email']) ? filter_var($data['email'], FILTER_VALIDATE_EMAIL) : null,
             'phone' => $data['phone'] ?? null,
             'address' => $data['address'] ?? null,
         ];
@@ -435,16 +435,16 @@ class ManagementController extends Controller
         $user = User::where('id', $_POST['id'])->first();
         $data = $this->filterUserData($_POST);
         $model_errors = User::validateUpdate($data);
-        if (!$data['email'] || $data['email'] == $user->email) {
-            unset($data['email']);
-            unset($model_errors['email']);
-        }
+        
+        // Không cho phép cập nhật email theo yêu cầu bảo mật
+        unset($data['email']);
+        unset($model_errors['email']);
+        
         if (empty($model_errors)) {
             $user->update([
-                'name' => $_POST['name'],
-                'email' => $_POST['email'],
-                'phone' => $_POST['phone'],
-                'address' => $_POST['address'],
+                'name' => $_POST['name'] ?? $user->name,
+                'phone' => $_POST['phone'] ?? $user->phone,
+                'address' => $_POST['address'] ?? $user->address,
             ]);
             redirect('home');
         }
@@ -832,7 +832,25 @@ class ManagementController extends Controller
         $this->requirePermission('user.delete');
         $id = $_POST['id'] ?? null;
         if ($id && $id != Guard::user()->id) {
-            User::where('id', $id)->delete();
+            $userToDelete = User::where('id', $id)->first();
+            if ($userToDelete) {
+                $currentUser = Guard::user();
+                // Bảo mật: Không cho phép STORE_OWNER xóa ADMIN hoặc STORE_OWNER khác
+                if ($userToDelete->isAdmin() && !$currentUser->isAdmin()) {
+                    redirect('users', ['errors' => ['delete' => 'Bạn không có quyền xóa Quản trị viên.']]);
+                    return;
+                }
+                if ($userToDelete->role === User::ROLE_STORE_OWNER && !$currentUser->isAdmin()) {
+                    redirect('users', ['errors' => ['delete' => 'Bạn không có quyền xóa Chủ cửa hàng khác.']]);
+                    return;
+                }
+                \App\Models\SystemLog::write('Xóa người dùng', [
+                    'id' => $userToDelete->id,
+                    'name' => $userToDelete->name,
+                    'role' => $userToDelete->role
+                ]);
+                $userToDelete->delete();
+            }
         }
         redirect('users');
     }
@@ -851,9 +869,10 @@ class ManagementController extends Controller
             'role' => $_POST['role'] ?? User::ROLE_CUSTOMER
         ];
 
-        // Bảo mật: Admin không được phép tạo thêm Admin khác
-        if ($data['role'] === User::ROLE_ADMIN) {
-            $data['role'] = User::ROLE_CUSTOMER_SUPPORT; // Mặc định về role thấp hơn nếu cố tình hack
+        // Bảo mật: Không cho phép non-Admin tạo Admin
+        $currentUser = Guard::user();
+        if ($data['role'] === User::ROLE_ADMIN && !$currentUser->isAdmin()) {
+            $data['role'] = User::ROLE_ORDER_STAFF; // Mặc định về role thấp hơn nếu cố tình hack
         }
 
         // Validation cơ bản
@@ -883,13 +902,19 @@ class ManagementController extends Controller
         }
 
         if (empty($errors)) {
-            User::create([
+            $newStaff = User::create([
                 'name' => $data['name'],
                 'email' => $data['email'],
                 'phone' => $data['phone'],
                 'address' => $data['address'],
                 'password' => password_hash($data['password'], PASSWORD_DEFAULT),
                 'role' => $data['role']
+            ]);
+            \App\Models\SystemLog::write('Tạo nhân sự mới', [
+                'id' => $newStaff->id,
+                'name' => $newStaff->name,
+                'email' => $newStaff->email,
+                'role' => $newStaff->role
             ]);
             redirect('users', ['messages' => ['success' => 'Đã thêm nhân sự thành công.']]);
         }
@@ -913,9 +938,18 @@ class ManagementController extends Controller
         ];
 
         // Bảo mật: Không cho phép đổi thành ADMIN nếu không phải ADMIN
-        // (Thực tế người đang thao tác là Admin nên có quyền, nhưng ta vẫn giữ logic an toàn)
+        $currentUser = Guard::user();
+        if ($data['role'] === User::ROLE_ADMIN && !$currentUser->isAdmin()) {
+            $data['role'] = User::ROLE_ORDER_STAFF; // Ngăn chặn
+        }
 
         $user->update($data);
+
+        \App\Models\SystemLog::write('Cập nhật nhân sự', [
+            'id' => $user->id,
+            'name' => $user->name,
+            'role' => $user->role
+        ]);
 
         redirect('users', ['messages' => ['success' => 'Cập nhật thông tin nhân sự thành công.']]);
     }
@@ -1046,6 +1080,234 @@ class ManagementController extends Controller
         } else {
             NhaXuatBan::where('ma_nxb', $id)->delete();
             redirect('/bookstore/public/manageProduct');
+        }
+    }
+
+    // =========================================================
+    // SYSTEM LOGS & SYSTEM OPERATIONS (For ADMIN Only)
+    // =========================================================
+
+    public function systemLogs()
+    {
+        $this->requirePermission('log.view');
+
+        // Phân trang
+        $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+        $page = $page > 0 ? $page : 1;
+        $perPage = 20;
+
+        $query = \App\Models\SystemLog::query();
+
+        // Xử lý bộ lọc tìm kiếm
+        if (isset($_GET['search']) && !empty($_GET['search'])) {
+            $search = $_GET['search'];
+            $query->where(function($q) use ($search) {
+                $q->where('action', 'like', "%$search%")
+                  ->orWhere('user_name', 'like', "%$search%")
+                  ->orWhere('details', 'like', "%$search%");
+            });
+        }
+
+        $total = $query->count();
+        $pages = ceil($total / $perPage);
+        $offset = ($page - 1) * $perPage;
+
+        $logs = $query->orderBy('created_at', 'DESC')
+                      ->offset($offset)
+                      ->limit($perPage)
+                      ->get();
+
+        $this->sendPage('manage/systemLogs', [
+            'logs' => $logs,
+            'page' => $page,
+            'pages' => $pages,
+            'total' => $total,
+            'messages' => session_get_once('messages'),
+        ]);
+    }
+
+    public function clearLogs()
+    {
+        $this->requirePermission('log.view'); // Đảm bảo đúng quyền
+        \App\Models\SystemLog::truncate();
+        \App\Models\SystemLog::write('Xóa Logs', 'Admin đã xóa sạch dữ liệu System Logs');
+        redirect('systemLogs', ['messages' => ['success' => 'Đã xóa toàn bộ logs thành công!']]);
+    }
+
+    public function systemConfig()
+    {
+        $this->requirePermission('system.manage');
+
+        // Đọc thông số máy chủ thực tế (Linux)
+        $phpVersion = PHP_VERSION;
+        
+        // Đo dung lượng RAM
+        $memFree = 0;
+        $memTotal = 0;
+        if (file_exists('/proc/meminfo')) {
+            $data = @explode("\n", @file_get_contents('/proc/meminfo'));
+            if ($data) {
+                foreach ($data as $line) {
+                    list($key, $val) = explode(":", $line . ":");
+                    if (trim($key) == 'MemTotal') {
+                        $memTotal = (int)filter_var($val, FILTER_SANITIZE_NUMBER_INT) / 1024; // MB
+                    }
+                    if (trim($key) == 'MemAvailable' || trim($key) == 'MemFree') {
+                        $memFree = (int)filter_var($val, FILTER_SANITIZE_NUMBER_INT) / 1024; // MB
+                    }
+                }
+            }
+        }
+        $memUsage = $memTotal > 0 ? round((($memTotal - $memFree) / $memTotal) * 100, 1) : 0;
+
+        // Đo dung lượng ổ đĩa
+        $diskTotal = @disk_total_space('/') / (1024 * 1024 * 1024); // GB
+        $diskFree = @disk_free_space('/') / (1024 * 1024 * 1024); // GB
+        $diskUsage = $diskTotal > 0 ? round((($diskTotal - $diskFree) / $diskTotal) * 100, 1) : 0;
+
+        // CPU load
+        $load = @sys_getloadavg();
+        $cpuUsage = isset($load[0]) ? round($load[0] * 100 / 4, 1) : 0; // Giả sử máy chủ có 4 cores
+
+        // Đọc trạng thái Maintenance Mode từ database
+        try {
+            $maintenanceSetting = \Illuminate\Database\Capsule\Manager::table('settings')->where('key', 'maintenance')->first();
+            $maintenance = ($maintenanceSetting && $maintenanceSetting->value === '1');
+        } catch (\Exception $e) {
+            $maintenance = false;
+        }
+
+        $this->sendPage('manage/systemConfig', [
+            'phpVersion' => $phpVersion,
+            'ramUsage' => $memUsage,
+            'ramTotal' => round($memTotal / 1024, 2), // GB
+            'diskUsage' => $diskUsage,
+            'diskTotal' => round($diskTotal, 2), // GB
+            'cpuUsage' => $cpuUsage,
+            'maintenance' => $maintenance,
+            'messages' => session_get_once('messages'),
+        ]);
+    }
+
+    public function toggleMaintenance()
+    {
+        $this->requirePermission('system.manage');
+
+        try {
+            $maintenanceSetting = \Illuminate\Database\Capsule\Manager::table('settings')->where('key', 'maintenance')->first();
+            $currentStatus = ($maintenanceSetting && $maintenanceSetting->value === '1');
+            $newStatus = !$currentStatus;
+
+            \Illuminate\Database\Capsule\Manager::table('settings')
+                ->where('key', 'maintenance')
+                ->update(['value' => $newStatus ? '1' : '0']);
+
+            \App\Models\SystemLog::write(
+                $newStatus ? 'Bảo trì: Bật' : 'Bảo trì: Tắt',
+                'Thay đổi trạng thái chế độ bảo trì hệ thống.'
+            );
+
+            redirect('systemConfig', ['messages' => ['success' => 'Đã ' . ($newStatus ? 'BẬT' : 'TẮT') . ' chế độ bảo trì hệ thống thành công!']]);
+        } catch (\Exception $e) {
+            redirect('systemConfig', ['messages' => ['error' => 'Lỗi cập nhật chế độ bảo trì: ' . $e->getMessage()]]);
+        }
+    }
+
+    public function clearCache()
+    {
+        $this->requirePermission('system.manage');
+
+        \App\Models\SystemLog::write('Xóa Cache', 'Admin đã thực hiện dọn dẹp bộ nhớ đệm (Cache) của hệ thống.');
+
+        redirect('systemConfig', ['messages' => ['success' => 'Đã xóa bộ nhớ đệm (Cache) hệ thống thành công!']]);
+    }
+
+    public function backupDb()
+    {
+        $this->requirePermission('system.manage');
+
+        try {
+            $connection = \Illuminate\Database\Capsule\Manager::connection();
+            $pdo = $connection->getPdo();
+            $dbName = $_ENV['DB_NAME'] ?? 'bookstore_db';
+
+            // Khởi tạo nội dung file SQL
+            $sql = "-- Bookworm Store Database Backup\n";
+            $sql .= "-- Generated: " . date('Y-m-d H:i:s') . "\n";
+            $sql .= "-- Database: " . $dbName . "\n";
+            $sql .= "-- --------------------------------------------------------\n\n";
+            $sql .= "SET FOREIGN_KEY_CHECKS=0;\n\n";
+
+            // Lấy danh sách các bảng
+            $tablesResult = $pdo->query("SHOW TABLES");
+            $tables = [];
+            while ($row = $tablesResult->fetch(\PDO::FETCH_NUM)) {
+                $tables[] = $row[0];
+            }
+
+            foreach ($tables as $table) {
+                $sql .= "-- --------------------------------------------------------\n";
+                $sql .= "-- Table structure for table `{$table}`\n";
+                $sql .= "-- --------------------------------------------------------\n";
+                $sql .= "DROP TABLE IF EXISTS `{$table}`;\n";
+
+                // SHOW CREATE TABLE
+                $createStatementResult = $pdo->query("SHOW CREATE TABLE `{$table}`");
+                $createStatementRow = $createStatementResult->fetch(\PDO::FETCH_NUM);
+                $sql .= $createStatementRow[1] . ";\n\n";
+
+                // Lấy dữ liệu của bảng
+                $rowsResult = $pdo->query("SELECT * FROM `{$table}`");
+                $columnCount = $rowsResult->columnCount();
+
+                if ($rowsResult->rowCount() > 0) {
+                    $sql .= "-- Dumping data for table `{$table}`\n";
+                    $sql .= "LOCK TABLES `{$table}` WRITE;\n";
+                    $sql .= "INSERT INTO `{$table}` VALUES \n";
+
+                    $first = true;
+                    while ($row = $rowsResult->fetch(\PDO::FETCH_NUM)) {
+                        if (!$first) {
+                            $sql .= ",\n";
+                        }
+                        $values = [];
+                        for ($i = 0; $i < $columnCount; $i++) {
+                            if (is_null($row[$i])) {
+                                $values[] = "NULL";
+                            } else {
+                                $values[] = $pdo->quote($row[$i]);
+                            }
+                        }
+                        $sql .= "(" . implode(",", $values) . ")";
+                        $first = false;
+                    }
+                    $sql .= ";\n";
+                    $sql .= "UNLOCK TABLES;\n\n";
+                }
+            }
+
+            $sql .= "SET FOREIGN_KEY_CHECKS=1;\n";
+
+            $backupFileName = 'backup_' . $dbName . '_' . date('Y-m-d_H-i-s') . '.sql';
+
+            // Ghi nhận log
+            \App\Models\SystemLog::write('Sao lưu CSDL', 'Admin sao lưu thành công database ' . $dbName . ' qua bộ backup PDO Exporter.');
+
+            // Thiết lập headers tải về trực tiếp từ bộ nhớ đệm PHP
+            header('Content-Description: File Transfer');
+            header('Content-Type: application/octet-stream');
+            header('Content-Disposition: attachment; filename="' . $backupFileName . '"');
+            header('Expires: 0');
+            header('Cache-Control: must-revalidate');
+            header('Pragma: public');
+            header('Content-Length: ' . strlen($sql));
+
+            echo $sql;
+            exit;
+
+        } catch (\Exception $e) {
+            \App\Models\SystemLog::write('Sao lưu CSDL thất bại', 'Lỗi sao lưu PDO: ' . $e->getMessage());
+            redirect('systemConfig', ['messages' => ['error' => 'Lỗi sao lưu CSDL: ' . $e->getMessage()]]);
         }
     }
 }

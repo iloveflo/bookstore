@@ -261,6 +261,22 @@ $currentUser = Guard::user();
                             </a>
                         </li>
                         <?php endif; ?>
+
+                        <?php if ($currentUser->can('log.view')): ?>
+                        <li class="nav-item">
+                            <a class="nav-link" href="systemLogs">
+                                <i class="fas fa-clipboard-list"></i> Nhật ký hệ thống
+                            </a>
+                        </li>
+                        <?php endif; ?>
+
+                        <?php if ($currentUser->can('system.manage')): ?>
+                        <li class="nav-item">
+                            <a class="nav-link" href="systemConfig">
+                                <i class="fas fa-cogs"></i> Thao tác hệ thống
+                            </a>
+                        </li>
+                        <?php endif; ?>
                     </ul>
                 </div>
             </nav>
@@ -314,7 +330,7 @@ $currentUser = Guard::user();
                             <th scope="col" class="text-uppercase">Tên Người Dùng</th>
                             <th scope="col" class="text-uppercase">Email</th>
                             <th scope="col" class="text-uppercase">SĐT</th>
-                            <th scope="col" class="text-uppercase">Vai Trò</th>
+                            <th scope="col" class="text-uppercase" style="min-width: 200px;">Vai Trò</th>
                             <th scope="col" class="text-uppercase">Thao Tác</th>
                         </tr>
                     </thead>
@@ -346,7 +362,7 @@ $currentUser = Guard::user();
                                                 <i class="fas fa-history"></i> Lịch sử
                                             </button>
                                         <?php else: ?>
-                                            <?php if ($currentUser->isAdmin()): ?>
+                                            <?php if ($currentUser->isAdmin() || ($currentUser->hasRole(\App\Models\User::ROLE_STORE_OWNER) && $user_manage->role === \App\Models\User::ROLE_ORDER_STAFF)): ?>
                                                 <button class="btn btn-sm btn-outline-warning button-edit" 
                                                         data-id="<?= $this->e($user_manage->id) ?>" 
                                                         data-name="<?= $this->e($user_manage->name) ?>"
@@ -409,11 +425,10 @@ $currentUser = Guard::user();
                             <div class="col-md-6 mb-3">
                                 <label for="role" class="form-label">Quyền hạn <span class="text-danger">*</span></label>
                                 <select class="form-select" id="role" name="role" required>
-                                    <option value="<?= User::ROLE_PRODUCT_MANAGER ?>">Quản lý sản phẩm</option>
-                                    <option value="<?= User::ROLE_ORDER_STAFF ?>">Nhân viên đơn hàng</option>
-                                    <option value="<?= User::ROLE_CUSTOMER_SUPPORT ?>">CSKH</option>
-                                    <option value="<?= User::ROLE_CONTENT_MANAGER ?>">Quản lý nội dung</option>
-                                    <option value="<?= User::ROLE_ANALYST ?>">Nhân viên phân tích</option>
+                                    <option value="<?= User::ROLE_ORDER_STAFF ?>">Nhân viên bán hàng</option>
+                                    <?php if ($currentUser->isAdmin()): ?>
+                                    <option value="<?= User::ROLE_STORE_OWNER ?>">Chủ cửa hàng</option>
+                                    <?php endif; ?>
                                 </select>
                             </div>
                         </div>
@@ -458,14 +473,14 @@ $currentUser = Guard::user();
                         <div class="mb-3">
                             <label for="edit-role" class="form-label">Quyền hạn <span class="text-danger">*</span></label>
                             <select class="form-select" id="edit-role" name="role" required>
-                                <option value="<?= User::ROLE_PRODUCT_MANAGER ?>">Quản lý sản phẩm</option>
-                                <option value="<?= User::ROLE_ORDER_STAFF ?>">Nhân viên đơn hàng</option>
-                                <option value="<?= User::ROLE_CUSTOMER_SUPPORT ?>">CSKH</option>
-                                <option value="<?= User::ROLE_CONTENT_MANAGER ?>">Quản lý nội dung</option>
-                                <option value="<?= User::ROLE_ANALYST ?>">Nhân viên phân tích</option>
-                                <option value="<?= User::ROLE_ADMIN ?>">Quản trị viên</option>
+                                <option value="<?= User::ROLE_ORDER_STAFF ?>">Nhân viên bán hàng</option>
+                                <?php if ($currentUser->isAdmin()): ?>
+                                <option value="<?= User::ROLE_STORE_OWNER ?>">Chủ cửa hàng</option>
+                                <?php endif; ?>
+                                <option value="<?= User::ROLE_ADMIN ?>" style="display:none;" disabled>Quản trị viên</option>
+                                <option value="<?= User::ROLE_STORE_OWNER ?>" style="display:none;" disabled>Chủ cửa hàng</option>
                             </select>
-                            <div class="form-text text-info small"><i class="fas fa-info-circle"></i> Chỉ thay đổi Role khi thực sự cần thiết.</div>
+                            <div class="form-text text-info small"><i class="fas fa-info-circle"></i> Không thể nâng cấp nhân sự lên mức quyền cao hơn giới hạn của bạn.</div>
                         </div>
                         <div class="mb-3">
                             <label for="edit-address" class="form-label">Địa chỉ</label>
@@ -568,7 +583,18 @@ $currentUser = Guard::user();
                 $('#edit-email').val(email);
                 $('#edit-phone').val(phone);
                 $('#edit-address').val(address);
-                $('#edit-role').val(role);
+                
+                // Hiển thị role hiện tại của user vào select (kể cả option ẩn)
+                var editRoleSelect = $('#edit-role');
+                editRoleSelect.find('option[value="' + role + '"]').prop('selected', true);
+                
+                // Vô hiệu hóa việc đổi role nếu đang sửa Admin, hoặc nếu là Store Owner tự sửa Store Owner
+                var isCurrentUserAdmin = <?= $currentUser->isAdmin() ? 'true' : 'false' ?>;
+                if (role === '<?= User::ROLE_ADMIN ?>' || (role === '<?= User::ROLE_STORE_OWNER ?>' && !isCurrentUserAdmin)) {
+                    editRoleSelect.prop('disabled', true);
+                } else {
+                    editRoleSelect.prop('disabled', false);
+                }
 
                 $('#editStaffModal').modal('show');
             });

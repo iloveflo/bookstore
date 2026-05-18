@@ -96,6 +96,18 @@
                                         <a href="dashboard" class="text-dark text-decoration-none"><i class="fas fa-chart-line me-2 text-primary"></i> Dashboard</a>
                                     </li>
                                     <?php endif; ?>
+
+                                    <?php if (\App\SessionGuard::can('log.view')): ?>
+                                    <li class="ps-4 py-2 text-start">
+                                        <a href="systemLogs" class="text-dark text-decoration-none"><i class="fas fa-clipboard-list me-2 text-primary"></i> Nhật Ký Hệ Thống</a>
+                                    </li>
+                                    <?php endif; ?>
+
+                                    <?php if (\App\SessionGuard::can('system.manage')): ?>
+                                    <li class="ps-4 py-2 text-start">
+                                        <a href="systemConfig" class="text-dark text-decoration-none"><i class="fas fa-cogs me-2 text-primary"></i> Thao Tác Hệ Thống</a>
+                                    </li>
+                                    <?php endif; ?>
                                 </ul>
                             </div>
                         <?php endif; ?>

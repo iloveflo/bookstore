@@ -12,6 +12,39 @@ define('APPNAME', 'Bookworms Store');
 session_start();
 checkRememberedLogin();
 
+// --- KIỂM TRA CHẾ ĐỘ BẢO TRÌ (MAINTENANCE MODE FROM DATABASE) ---
+try {
+    $maintenanceSetting = \Illuminate\Database\Capsule\Manager::table('settings')->where('key', 'maintenance')->first();
+    $maintenance = ($maintenanceSetting && $maintenanceSetting->value === '1');
+} catch (\Exception $e) {
+    $maintenance = false;
+}
+
+if ($maintenance) {
+    // Kiểm tra xem user hiện tại có phải là nhân viên quản trị hay không
+    $isStaff = false;
+    if (class_exists('\App\SessionGuard') && \App\SessionGuard::isUserLoggedIn()) {
+        $user = \App\SessionGuard::user();
+        if ($user && $user->isStaff()) {
+            $isStaff = true;
+        }
+    }
+    
+    $requestUri = $_SERVER['REQUEST_URI'] ?? '';
+    // Bỏ qua chặn cho các route xác thực (đăng nhập, đăng xuất, google, facebook) để admin thao tác
+    $isAuthRoute = (strpos($requestUri, 'login') !== false || 
+                    strpos($requestUri, 'logout') !== false || 
+                    strpos($requestUri, 'auth') !== false ||
+                    strpos($requestUri, 'systemConfig') !== false ||
+                    strpos($requestUri, 'toggleMaintenance') !== false);
+    
+    if (!$isStaff && !$isAuthRoute) {
+        http_response_code(503);
+        include __DIR__ . '/../views/errors/maintenance.php';
+        exit;
+    }
+}
+
 $router = new \Bramus\Router\Router();
 
 // Auth routes
@@ -114,6 +147,14 @@ $router->post('/updatePass', '\App\Controllers\Manage\ManagementController@updat
 $router->post('/createStaff', '\App\Controllers\Manage\ManagementController@createStaff');
 $router->post('/deleteUser', '\App\Controllers\Manage\ManagementController@deleteUser');
 $router->post('/updateStaff', '\App\Controllers\Manage\ManagementController@updateStaff');
+
+// System Logs & System Operations Routes
+$router->get('/systemLogs', '\App\Controllers\Manage\ManagementController@systemLogs');
+$router->post('/clearLogs', '\App\Controllers\Manage\ManagementController@clearLogs');
+$router->get('/systemConfig', '\App\Controllers\Manage\ManagementController@systemConfig');
+$router->post('/toggleMaintenance', '\App\Controllers\Manage\ManagementController@toggleMaintenance');
+$router->post('/clearCache', '\App\Controllers\Manage\ManagementController@clearCache');
+$router->post('/backupDb', '\App\Controllers\Manage\ManagementController@backupDb');
 
 $router->setBasePath('/bookstore/public');
 $router->run();

@@ -59,6 +59,7 @@ class LoginController extends Controller
 
         if (!$user) {
             $error_wrong['email_password'] = 'Email hoặc mật khẩu không đúng.';
+            \App\Models\SystemLog::write('Đăng nhập thất bại', ['email' => $email, 'reason' => 'Email không tồn tại']);
         } elseif (Guard::login($user, ['email' => $email, 'password' => $password])) {
 
             // --- XỬ LÝ GHI NHỚ ĐĂNG NHẬP (AUTO LOGIN) ---
@@ -76,10 +77,12 @@ class LoginController extends Controller
             }
             // ---------------------------------------------
 
+            \App\Models\SystemLog::write('Đăng nhập', 'Đăng nhập thành công qua form');
             redirect('home'); // Đăng nhập thành công
             return;
         } else {
             $error_wrong['email_password'] = 'Mật khẩu không đúng.';
+            \App\Models\SystemLog::write('Đăng nhập thất bại', ['email' => $email, 'reason' => 'Sai mật khẩu']);
         }
 
         // Đăng nhập thất bại
@@ -95,6 +98,7 @@ class LoginController extends Controller
         // 1. Xóa token trong Database (Để cookie cũ không còn tác dụng)
         if (Guard::user()) {
             $user = Guard::user();
+            \App\Models\SystemLog::write('Đăng xuất', 'Người dùng đăng xuất');
             $user->update(['remember_token' => null]);
         }
 
